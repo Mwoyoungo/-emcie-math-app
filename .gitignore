@@ -70,7 +70,7 @@ windows/flutter/generated_plugin_registrant.h
 .env.production
 
 # Supabase credentials (security)
-lib/config/supabase_config.dart
+# lib/config/supabase_config.dart
 
 # IDE
 .vscode/
