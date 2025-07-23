@@ -43,8 +43,8 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-# Web related
-/web/
+# Web related (keep source web files, ignore build output)
+# /web/
 
 # Windows
 windows/flutter/generated_plugin_registrant.cc
