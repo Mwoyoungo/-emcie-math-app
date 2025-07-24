@@ -46,6 +46,13 @@ List<Menu> sidebarMenus2 = [
         stateMachineName: "TIMER_Interactivity"),
   ),
   Menu(
+    title: "Test Classes",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "SEARCH",
+        stateMachineName: "SEARCH_Interactivity"),
+  ),
+  Menu(
     title: "Notifications",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
@@ -54,6 +61,7 @@ List<Menu> sidebarMenus2 = [
   ),
 ];
 
+// Student Navigation Items
 List<Menu> bottomNavItems = [
   Menu(
     title: "Topics",
@@ -75,5 +83,58 @@ List<Menu> bottomNavItems = [
         src: "assets/RiveAssets/icons.riv",
         artboard: "USER",
         stateMachineName: "USER_Interactivity"),
+  ),
+];
+
+// Teacher Navigation Items - Simplified for student-focused app
+List<Menu> teacherNavItems = [
+  Menu(
+    title: "Classes",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "USER",
+        stateMachineName: "USER_Interactivity"),
+  ),
+  Menu(
+    title: "Analytics",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "TIMER",
+        stateMachineName: "TIMER_Interactivity"),
+  ),
+  Menu(
+    title: "Profile",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "BELL",
+        stateMachineName: "BELL_Interactivity"),
+  ),
+];
+
+// Teacher Sidebar Menu Items - Simplified for student signup only
+List<Menu> teacherSidebarMenus = [
+  Menu(
+    title: "Add Students",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "USER",
+        stateMachineName: "USER_Interactivity"),
+  ),
+  Menu(
+    title: "Student Requests",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "LIKE/STAR",
+        stateMachineName: "STAR_Interactivity"),
+  ),
+];
+
+List<Menu> teacherSidebarMenus2 = [
+  Menu(
+    title: "Settings",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "BELL",
+        stateMachineName: "BELL_Interactivity"),
   ),
 ];

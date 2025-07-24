@@ -4,6 +4,8 @@ import 'package:rive_animation/screens/onboding/onboding_screen.dart';
 import 'package:rive_animation/services/user_service.dart';
 import 'package:rive_animation/services/chat_session_service.dart';
 import 'package:rive_animation/services/performance_service.dart';
+import 'package:rive_animation/services/teacher_service.dart';
+import 'package:rive_animation/services/class_service.dart';
 import 'package:rive_animation/services/supabase_service.dart';
 import 'package:rive_animation/config/supabase_config.dart';
 
@@ -36,6 +38,8 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => UserService()),
         ChangeNotifierProvider(create: (context) => ChatSessionService()),
         ChangeNotifierProvider(create: (context) => PerformanceService()),
+        ChangeNotifierProvider(create: (context) => TeacherService()),
+        ChangeNotifierProvider(create: (context) => ClassService()),
       ],
       child: MaterialApp(
         title: 'Emcie - Math Learning Assistant',

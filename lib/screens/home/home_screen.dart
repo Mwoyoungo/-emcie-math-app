@@ -5,6 +5,7 @@ import '../../model/course.dart';
 import '../../services/chat_session_service.dart';
 import '../../services/performance_service.dart';
 import '../../services/user_service.dart';
+import '../test/class_test_screen.dart';
 import 'components/topic_tile.dart';
 import 'components/secondary_course_card.dart';
 
@@ -80,6 +81,17 @@ class HomePage extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => ClassTestScreen()),
+              );
+            },
+            backgroundColor: const Color(0xFF7553F6),
+            child: const Icon(Icons.science, color: Colors.white),
+            tooltip: 'Test Class System',
           ),
         );
       },

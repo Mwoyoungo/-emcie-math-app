@@ -1,11 +1,14 @@
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:rive/rive.dart';
 import 'package:rive_animation/constants.dart';
 import 'package:rive_animation/screens/home/home_screen.dart';
 import 'package:rive_animation/screens/progress/progress_screen.dart';
 import 'package:rive_animation/screens/auth/profile_screen.dart' as auth_profile;
+import 'package:rive_animation/screens/teacher/teacher_classes_screen.dart';
+import 'package:rive_animation/services/user_service.dart';
 import 'package:rive_animation/utils/rive_utils.dart';
 import 'package:rive_animation/utils/responsive_utils.dart';
 
@@ -25,10 +28,42 @@ class _EntryPointState extends State<EntryPoint>
     with SingleTickerProviderStateMixin {
   bool isSideBarOpen = false;
 
-  Menu selectedBottonNav = bottomNavItems.first;
-  Menu selectedSideMenu = sidebarMenus.first;
+  Menu? selectedBottonNav;
+  Menu? selectedSideMenu;
 
   late SMIBool isMenuOpenInput;
+
+  List<Menu> get currentNavItems {
+    final userService = Provider.of<UserService>(context, listen: false);
+    final isTeacher = userService.currentUser?.role == 'teacher';
+    return isTeacher ? teacherNavItems : bottomNavItems;
+  }
+
+  List<Menu> get currentSidebarMenus {
+    final userService = Provider.of<UserService>(context, listen: false);
+    final isTeacher = userService.currentUser?.role == 'teacher';
+    return isTeacher ? teacherSidebarMenus : sidebarMenus;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Initialize after the widget is built to access Provider
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initializeNavigation();
+    });
+    _setupAnimations();
+  }
+
+  void _initializeNavigation() {
+    final navItems = currentNavItems;
+    if (navItems.isNotEmpty && selectedBottonNav == null) {
+      setState(() {
+        selectedBottonNav = navItems.first;
+        selectedSideMenu = currentSidebarMenus.first;
+      });
+    }
+  }
 
   void updateSelectedBtmNav(Menu menu) {
     if (selectedBottonNav != menu) {
@@ -39,15 +74,35 @@ class _EntryPointState extends State<EntryPoint>
   }
 
   Widget _getCurrentScreen() {
-    switch (selectedBottonNav.title) {
-      case "Topics":
-        return const HomePage();
-      case "Performance":
-        return const ProgressScreen();
-      case "Profile":
-        return const auth_profile.ProfileScreen();
-      default:
-        return const HomePage();
+    if (selectedBottonNav == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    
+    final userService = Provider.of<UserService>(context, listen: false);
+    final isTeacher = userService.currentUser?.role == 'teacher';
+    
+    if (isTeacher) {
+      switch (selectedBottonNav!.title) {
+        case "Classes":
+          return TeacherClassesScreen();
+        case "Analytics":
+          return const ProgressScreen(); // Show analytics as progress
+        case "Profile":
+          return const auth_profile.ProfileScreen();
+        default:
+          return const HomePage();
+      }
+    } else {
+      switch (selectedBottonNav!.title) {
+        case "Topics":
+          return const HomePage();
+        case "Performance":
+          return const ProgressScreen();
+        case "Profile":
+          return const auth_profile.ProfileScreen();
+        default:
+          return const HomePage();
+      }
     }
   }
 
@@ -55,8 +110,7 @@ class _EntryPointState extends State<EntryPoint>
   late Animation<double> scalAnimation;
   late Animation<double> animation;
 
-  @override
-  void initState() {
+  void _setupAnimations() {
     _animationController = AnimationController(
         vsync: this, duration: const Duration(milliseconds: 200))
       ..addListener(
@@ -68,7 +122,6 @@ class _EntryPointState extends State<EntryPoint>
         parent: _animationController, curve: Curves.fastOutSlowIn));
     animation = Tween<double>(begin: 0, end: 1).animate(CurvedAnimation(
         parent: _animationController, curve: Curves.fastOutSlowIn));
-    super.initState();
   }
 
   @override
@@ -310,37 +363,42 @@ class _EntryPointState extends State<EntryPoint>
           ),
           const Spacer(),
           // Desktop navigation tabs
-          Row(
-            children: bottomNavItems.map((item) {
-              final isSelected = selectedBottonNav == item;
-              return Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                child: InkWell(
-                  onTap: () => updateSelectedBtmNav(item),
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: isSelected 
-                        ? const Color(0xFF7553F6).withValues(alpha: 0.1)
-                        : Colors.transparent,
+          Consumer<UserService>(
+            builder: (context, userService, child) {
+              final navItems = currentNavItems;
+              return Row(
+                children: navItems.map((item) {
+                  final isSelected = selectedBottonNav == item;
+                  return Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: InkWell(
+                      onTap: () => updateSelectedBtmNav(item),
                       borderRadius: BorderRadius.circular(12),
-                      border: isSelected 
-                        ? Border.all(color: const Color(0xFF7553F6).withValues(alpha: 0.3))
-                        : null,
-                    ),
-                    child: Text(
-                      item.title,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                        color: isSelected ? const Color(0xFF7553F6) : Colors.grey[600],
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isSelected 
+                            ? const Color(0xFF7553F6).withValues(alpha: 0.1)
+                            : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                          border: isSelected 
+                            ? Border.all(color: const Color(0xFF7553F6).withValues(alpha: 0.3))
+                            : null,
+                        ),
+                        child: Text(
+                          item.title,
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                            color: isSelected ? const Color(0xFF7553F6) : Colors.grey[600],
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                }).toList(),
               );
-            }).toList(),
+            },
           ),
         ],
       ),
@@ -388,7 +446,7 @@ class _EntryPointState extends State<EntryPoint>
           const Spacer(),
           // Current page indicator
           Text(
-            selectedBottonNav.title,
+            selectedBottonNav?.title ?? '',
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w500,
@@ -433,9 +491,9 @@ class _EntryPointState extends State<EntryPoint>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               ...List.generate(
-                bottomNavItems.length,
+                currentNavItems.length,
                 (index) {
-                  Menu navBar = bottomNavItems[index];
+                  Menu navBar = currentNavItems[index];
                   return BtmNavItem(
                     navBar: navBar,
                     press: () {
@@ -446,7 +504,7 @@ class _EntryPointState extends State<EntryPoint>
                       navBar.rive.status = RiveUtils.getRiveInput(artboard,
                           stateMachineName: navBar.rive.stateMachineName);
                     },
-                    selectedNav: selectedBottonNav,
+                    selectedNav: selectedBottonNav ?? navBar,
                   );
                 },
               ),
