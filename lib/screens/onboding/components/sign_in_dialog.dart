@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import 'sign_in_form.dart';
-import '../../auth/login_screen.dart';
+import '../../auth/modern_login_screen.dart';
 
 void showCustomDialog(BuildContext context, {required ValueChanged onValue}) {
   showGeneralDialog(
@@ -86,7 +86,7 @@ void showCustomDialog(BuildContext context, {required ValueChanged onValue}) {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const LoginScreen(),
+                                  builder: (context) => const ModernLoginScreen(),
                                 ),
                               );
                             },

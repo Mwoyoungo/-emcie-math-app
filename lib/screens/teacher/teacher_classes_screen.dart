@@ -22,6 +22,7 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FE),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -49,26 +50,73 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showCreateClassDialog(context),
-        backgroundColor: const Color(0xFF7553F6),
-        icon: const Icon(Icons.add, color: Colors.white),
-        label: const Text('Create Class', style: TextStyle(color: Colors.white)),
+      floatingActionButton: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [Color(0xFF7553F6), Color(0xFF9C7DF7)],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF7553F6).withValues(alpha: 0.4),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: FloatingActionButton.extended(
+          onPressed: () => _showCreateClassDialog(context),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          icon: const Icon(Icons.add, color: Colors.white, size: 24),
+          label: const Text(
+            'Create Class',
+            style: TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+              fontSize: 16,
+            ),
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF7553F6),
+            Color(0xFF9C7DF7),
+            Color(0xFFAD88F2),
+          ],
+        ),
+        borderRadius: const BorderRadius.only(
+          bottomLeft: Radius.circular(32),
+          bottomRight: Radius.circular(32),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF7553F6).withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const SizedBox(height: 20),
           Text(
             'My Classes',
             style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-              color: Colors.black,
+              color: Colors.white,
               fontWeight: FontWeight.bold,
+              fontSize: 32,
             ),
           ),
           const SizedBox(height: 8),
@@ -77,12 +125,14 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
               return Text(
                 'Welcome back, ${userService.currentUser?.fullName ?? 'Teacher'}!',
                 style: TextStyle(
-                  color: Colors.grey[600],
-                  fontSize: 16,
+                  color: Colors.white.withValues(alpha: 0.9),
+                  fontSize: 18,
+                  fontWeight: FontWeight.w500,
                 ),
               );
             },
           ),
+          const SizedBox(height: 16),
         ],
       ),
     );
@@ -90,219 +140,391 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.school_outlined,
-            size: 80,
-            color: Colors.grey[300],
-          ),
-          const SizedBox(height: 16),
-          Text(
-            'No Classes Yet',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey[600],
+      child: Container(
+        margin: const EdgeInsets.all(40),
+        padding: const EdgeInsets.all(48),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(24),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withValues(alpha: 0.1),
+              blurRadius: 20,
+              offset: const Offset(0, 8),
             ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Create your first class to get started',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.grey[500],
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 120,
+              height: 120,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF7553F6),
+                    Color(0xFF9C7DF7),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(60),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7553F6).withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.school_outlined,
+                size: 60,
+                color: Colors.white,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton.icon(
-            onPressed: () => _showCreateClassDialog(context),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF7553F6),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            const SizedBox(height: 32),
+            const Text(
+              'No Classes Yet',
+              style: TextStyle(
+                fontSize: 28,
+                fontWeight: FontWeight.bold,
+                color: Color(0xFF1a1a1a),
+              ),
             ),
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text(
-              'Create Your First Class',
-              style: TextStyle(color: Colors.white),
+            const SizedBox(height: 12),
+            Text(
+              'Create your first class to start teaching and managing your students',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey[600],
+                height: 1.5,
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 40),
+            Container(
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF7553F6), Color(0xFF9C7DF7)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF7553F6).withValues(alpha: 0.3),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: ElevatedButton.icon(
+                onPressed: () => _showCreateClassDialog(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.transparent,
+                  shadowColor: Colors.transparent,
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.add, color: Colors.white, size: 24),
+                label: const Text(
+                  'Create Your First Class',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildClassesList(List<SchoolClass> classes) {
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
       itemCount: classes.length,
       itemBuilder: (context, index) {
         final schoolClass = classes[index];
-        return _buildClassCard(schoolClass);
+        return _buildModernClassCard(schoolClass, index);
       },
     );
   }
 
-  Widget _buildClassCard(SchoolClass schoolClass) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: InkWell(
-        onTap: () => _viewClassDetails(schoolClass),
-        borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Class Header
-              Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          schoolClass.name,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        if (schoolClass.description != null) ...[
-                          const SizedBox(height: 4),
-                          Text(
-                            schoolClass.description!,
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                            ),
-                          ),
-                        ],
-                      ],
+  Widget _buildModernClassCard(SchoolClass schoolClass, int index) {
+    // Generate different gradient colors for variety
+    final gradientColors = [
+      [const Color(0xFF7553F6), const Color(0xFF9C7DF7)],
+      [const Color(0xFF667eea), const Color(0xFF764ba2)],
+      [const Color(0xFFf093fb), const Color(0xFFf5576c)],
+      [const Color(0xFF4facfe), const Color(0xFF00f2fe)],
+      [const Color(0xFF43e97b), const Color(0xFF38f9d7)],
+    ];
+    
+    final colors = gradientColors[index % gradientColors.length];
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 20),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: colors[0].withValues(alpha: 0.3),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Material(
+        borderRadius: BorderRadius.circular(20),
+        color: Colors.white,
+        child: InkWell(
+          onTap: () => _viewClassDetails(schoolClass),
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: colors[0].withValues(alpha: 0.1),
+                width: 1,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Header with gradient background
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: colors,
+                    ),
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      topRight: Radius.circular(20),
                     ),
                   ),
-                  PopupMenuButton<String>(
-                    onSelected: (value) => _handleClassAction(value, schoolClass),
-                    itemBuilder: (context) => [
-                      const PopupMenuItem(
-                        value: 'edit',
-                        child: Row(
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Icon(Icons.edit, size: 20),
-                            SizedBox(width: 8),
-                            Text('Edit'),
+                            Text(
+                              schoolClass.name,
+                              style: const TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            if (schoolClass.description != null) ...[
+                              const SizedBox(height: 6),
+                              Text(
+                                schoolClass.description!,
+                                style: TextStyle(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                  fontSize: 14,
+                                  height: 1.3,
+                                ),
+                              ),
+                            ],
                           ],
                         ),
                       ),
-                      const PopupMenuItem(
-                        value: 'delete',
-                        child: Row(
-                          children: [
-                            Icon(Icons.delete, size: 20, color: Colors.red),
-                            SizedBox(width: 8),
-                            Text('Delete', style: TextStyle(color: Colors.red)),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: PopupMenuButton<String>(
+                          onSelected: (value) => _handleClassAction(value, schoolClass),
+                          icon: const Icon(
+                            Icons.more_vert,
+                            color: Colors.white,
+                          ),
+                          itemBuilder: (context) => [
+                            const PopupMenuItem(
+                              value: 'edit',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.edit, size: 20),
+                                  SizedBox(width: 8),
+                                  Text('Edit'),
+                                ],
+                              ),
+                            ),
+                            const PopupMenuItem(
+                              value: 'delete',
+                              child: Row(
+                                children: [
+                                  Icon(Icons.delete, size: 20, color: Colors.red),
+                                  SizedBox(width: 8),
+                                  Text('Delete', style: TextStyle(color: Colors.red)),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
                       ),
                     ],
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Class Info Row
-              Row(
-                children: [
-                  _buildInfoChip(
-                    icon: Icons.subject,
-                    label: schoolClass.subject,
-                    color: Colors.blue,
-                  ),
-                  const SizedBox(width: 8),
-                  if (schoolClass.gradeLevel != null)
-                    _buildInfoChip(
-                      icon: Icons.grade,
-                      label: schoolClass.gradeLevel!,
-                      color: Colors.green,
-                    ),
-                  const SizedBox(width: 8),
-                  _buildInfoChip(
-                    icon: Icons.people,
-                    label: '${schoolClass.enrolledCount ?? 0} students',
-                    color: Colors.orange,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Class Code Row
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF7553F6).withOpacity(0.1),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: const Color(0xFF7553F6).withOpacity(0.3),
+                ),
+                
+                // Content section
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Info chips
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          _buildModernInfoChip(
+                            icon: Icons.subject,
+                            label: schoolClass.subject,
+                            backgroundColor: colors[0].withValues(alpha: 0.1),
+                            textColor: colors[0],
+                          ),
+                          if (schoolClass.gradeLevel != null)
+                            _buildModernInfoChip(
+                              icon: Icons.grade,
+                              label: schoolClass.gradeLevel!,
+                              backgroundColor: Colors.green.withValues(alpha: 0.1),
+                              textColor: Colors.green[700]!,
+                            ),
+                          _buildModernInfoChip(
+                            icon: Icons.people,
+                            label: '${schoolClass.enrolledCount ?? 0} students',
+                            backgroundColor: Colors.orange.withValues(alpha: 0.1),
+                            textColor: Colors.orange[700]!,
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 16),
+                      
+                      // Class code section
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              colors[0].withValues(alpha: 0.1),
+                              colors[1].withValues(alpha: 0.05),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: colors[0].withValues(alpha: 0.2),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: colors[0],
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: const Icon(
+                                Icons.key,
+                                size: 20,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Class Code',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.grey[600],
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    schoolClass.classCode,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: colors[0],
+                                      fontSize: 16,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: colors[0].withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: IconButton(
+                                onPressed: () => _copyClassCode(schoolClass.classCode),
+                                icon: Icon(
+                                  Icons.copy,
+                                  size: 20,
+                                  color: colors[0],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.key,
-                      size: 16,
-                      color: Color(0xFF7553F6),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      'Class Code: ${schoolClass.classCode}',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF7553F6),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: () => _copyClassCode(schoolClass.classCode),
-                      child: const Icon(
-                        Icons.copy,
-                        size: 16,
-                        color: Color(0xFF7553F6),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  Widget _buildInfoChip({
+  Widget _buildModernInfoChip({
     required IconData icon,
     required String label,
-    required Color color,
+    required Color backgroundColor,
+    required Color textColor,
   }) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: textColor.withValues(alpha: 0.2),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 4),
+          Icon(
+            icon,
+            size: 16,
+            color: textColor,
+          ),
+          const SizedBox(width: 6),
           Text(
             label,
             style: TextStyle(
+              fontWeight: FontWeight.w600,
+              color: textColor,
               fontSize: 12,
-              color: color,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
