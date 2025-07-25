@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:rive_animation/services/class_service.dart';
 import 'package:rive_animation/services/user_service.dart';
+import 'package:rive_animation/screens/teacher/teacher_class_detail_screen.dart';
 
 class TeacherClassesScreen extends StatefulWidget {
   @override
@@ -321,11 +322,10 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
   }
 
   void _viewClassDetails(SchoolClass schoolClass) {
-    // TODO: Navigate to class details screen
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Opening ${schoolClass.name} details...'),
-        duration: const Duration(seconds: 1),
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => TeacherClassDetailScreen(schoolClass: schoolClass),
       ),
     );
   }

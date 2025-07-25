@@ -5,11 +5,13 @@ import 'package:provider/provider.dart';
 import 'components/chat_message.dart';
 import 'components/math_input_bar.dart';
 import 'components/tutor_popup.dart';
+import 'components/share_chat_dialog.dart';
 import '../../services/ai_service.dart';
 import '../../services/user_service.dart';
 import '../../services/chat_session_service.dart';
 import '../../services/performance_service.dart';
 import '../../services/supabase_service.dart';
+import '../../services/chat_sharing_service.dart';
 import '../../utils/responsive_utils.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -569,6 +571,80 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _handleMenuAction(String action) {
+    switch (action) {
+      case 'share':
+        _shareChat();
+        break;
+      case 'clear':
+        _clearChat();
+        break;
+    }
+  }
+
+  void _shareChat() {
+    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
+    final currentSession = chatSessionService.currentSession;
+    
+    if (currentSession == null || currentSession.messages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('No conversation to share yet. Start chatting with Mam Rose!'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => ShareChatDialog(chatSession: currentSession),
+    );
+  }
+
+  void _clearChat() {
+    if (messages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Chat is already empty'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Clear Chat'),
+        content: const Text('Are you sure you want to clear all messages? This action cannot be undone.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                messages.clear();
+              });
+              // Note: Messages are cleared from UI, session persists in service
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Chat cleared successfully'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Clear'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -656,14 +732,34 @@ class _ChatScreenState extends State<ChatScreen> {
           ),
           Container(
             margin: const EdgeInsets.only(right: 8),
-            child: IconButton(
-              onPressed: () {
-                // Add more options here
-              },
+            child: PopupMenuButton<String>(
+              onSelected: _handleMenuAction,
               icon: Icon(
                 Icons.more_vert,
                 color: Colors.grey[600],
               ),
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'share',
+                  child: Row(
+                    children: [
+                      Icon(Icons.share, size: 20, color: Color(0xFF7553F6)),
+                      SizedBox(width: 8),
+                      Text('Share with Teacher'),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'clear',
+                  child: Row(
+                    children: [
+                      Icon(Icons.clear_all, size: 20, color: Colors.orange),
+                      SizedBox(width: 8),
+                      Text('Clear Chat'),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -6,6 +6,9 @@ import 'package:rive_animation/services/chat_session_service.dart';
 import 'package:rive_animation/services/performance_service.dart';
 import 'package:rive_animation/services/teacher_service.dart';
 import 'package:rive_animation/services/class_service.dart';
+import 'package:rive_animation/services/chat_sharing_service.dart';
+import 'package:rive_animation/services/video_session_service.dart';
+import 'package:rive_animation/services/assignment_service.dart';
 import 'package:rive_animation/services/supabase_service.dart';
 import 'package:rive_animation/config/supabase_config.dart';
 
@@ -40,6 +43,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (context) => PerformanceService()),
         ChangeNotifierProvider(create: (context) => TeacherService()),
         ChangeNotifierProvider(create: (context) => ClassService()),
+        ChangeNotifierProvider(create: (context) => ChatSharingService()),
+        ChangeNotifierProvider(create: (context) => VideoSessionService()),
+        ChangeNotifierProvider(create: (context) => AssignmentService()),
       ],
       child: MaterialApp(
         title: 'Emcie - Math Learning Assistant',

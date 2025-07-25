@@ -8,6 +8,9 @@ import 'package:rive_animation/screens/home/home_screen.dart';
 import 'package:rive_animation/screens/progress/progress_screen.dart';
 import 'package:rive_animation/screens/auth/profile_screen.dart' as auth_profile;
 import 'package:rive_animation/screens/teacher/teacher_classes_screen.dart';
+import 'package:rive_animation/screens/student/student_classes_screen.dart';
+import 'package:rive_animation/screens/teacher/teacher_activity_screen.dart';
+import 'package:rive_animation/screens/student/student_activity_screen.dart';
 import 'package:rive_animation/services/user_service.dart';
 import 'package:rive_animation/utils/rive_utils.dart';
 import 'package:rive_animation/utils/responsive_utils.dart';
@@ -85,19 +88,21 @@ class _EntryPointState extends State<EntryPoint>
       switch (selectedBottonNav!.title) {
         case "Classes":
           return TeacherClassesScreen();
-        case "Analytics":
-          return const ProgressScreen(); // Show analytics as progress
+        case "Activity":
+          return const TeacherActivityScreen();
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:
-          return const HomePage();
+          return TeacherClassesScreen();
       }
     } else {
       switch (selectedBottonNav!.title) {
         case "Topics":
           return const HomePage();
-        case "Performance":
-          return const ProgressScreen();
+        case "Classes":
+          return const StudentClassesScreen();
+        case "Activity":
+          return const StudentActivityScreen();
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:

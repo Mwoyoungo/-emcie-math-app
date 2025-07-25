@@ -71,11 +71,18 @@ List<Menu> bottomNavItems = [
         stateMachineName: "HOME_interactivity"),
   ),
   Menu(
-    title: "Performance",
+    title: "Classes",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
-        artboard: "TIMER",
-        stateMachineName: "TIMER_Interactivity"),
+        artboard: "SEARCH",
+        stateMachineName: "SEARCH_Interactivity"),
+  ),
+  Menu(
+    title: "Activity",
+    rive: RiveModel(
+        src: "assets/RiveAssets/icons.riv",
+        artboard: "LIKE/STAR",
+        stateMachineName: "STAR_Interactivity"),
   ),
   Menu(
     title: "Profile",
@@ -96,11 +103,11 @@ List<Menu> teacherNavItems = [
         stateMachineName: "USER_Interactivity"),
   ),
   Menu(
-    title: "Analytics",
+    title: "Activity",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
-        artboard: "TIMER",
-        stateMachineName: "TIMER_Interactivity"),
+        artboard: "LIKE/STAR",
+        stateMachineName: "STAR_Interactivity"),
   ),
   Menu(
     title: "Profile",
