@@ -1,243 +1,556 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:rive_animation/services/video_session_service.dart';
+
+import '../../services/video_session_service.dart';
+import '../../model/video_session_model.dart';
+import '../../model/class_model.dart';
 
 class CreateVideoSessionScreen extends StatefulWidget {
-  final String classId;
-  final String className;
+  final ClassModel classModel;
+  final VideoSession? sessionToEdit;
 
   const CreateVideoSessionScreen({
     super.key,
-    required this.classId,
-    required this.className,
+    required this.classModel,
+    this.sessionToEdit,
   });
 
   @override
-  State<CreateVideoSessionScreen> createState() => _CreateVideoSessionScreenState();
+  State<CreateVideoSessionScreen> createState() =>
+      _CreateVideoSessionScreenState();
 }
 
 class _CreateVideoSessionScreenState extends State<CreateVideoSessionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _videoLinkController = TextEditingController();
 
-  TimeOfDay _selectedTime = const TimeOfDay(hour: 9, minute: 0);
+  TimeOfDay _selectedTime = const TimeOfDay(hour: 10, minute: 0);
   int _durationMinutes = 60;
-  final List<int> _selectedDays = [];
+  List<int> _selectedDays = [];
   bool _isLoading = false;
 
-  final List<String> _dayNames = [
-    'Monday',
-    'Tuesday', 
-    'Wednesday',
-    'Thursday',
-    'Friday',
-    'Saturday',
-    'Sunday'
-  ];
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sessionToEdit != null) {
+      _titleController.text = widget.sessionToEdit!.title;
+      _descriptionController.text = widget.sessionToEdit!.description;
+      _selectedDays = List.from(widget.sessionToEdit!.recurringDays);
+      _durationMinutes = widget.sessionToEdit!.durationMinutes;
 
-  final List<int> _durationOptions = [30, 45, 60, 90, 120];
+      // Parse time
+      final timeParts = widget.sessionToEdit!.startTime.split(':');
+      _selectedTime = TimeOfDay(
+        hour: int.parse(timeParts[0]),
+        minute: int.parse(timeParts[1]),
+      );
+    }
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
     _descriptionController.dispose();
+    _videoLinkController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final isEditing = widget.sessionToEdit != null;
+
     return Scaffold(
+      backgroundColor: const Color(0xFFF8F9FA),
       appBar: AppBar(
-        title: const Text('Create Video Session'),
-        backgroundColor: const Color(0xFF7553F6),
-        foregroundColor: Colors.white,
+        backgroundColor: Colors.white,
         elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildHeader(),
-              const SizedBox(height: 24),
-              _buildSessionDetailsCard(),
-              const SizedBox(height: 16),
-              _buildScheduleCard(),
-              const SizedBox(height: 16),
-              _buildRecurringDaysCard(),
-              const SizedBox(height: 32),
-              _buildCreateButton(),
-            ],
+        leading: IconButton(
+          onPressed: () => Navigator.pop(context),
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+        ),
+        title: Text(
+          isEditing ? 'Edit Video Session' : 'Create Video Session',
+          style: const TextStyle(
+            color: Colors.black,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: const Color(0xFF7553F6).withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: const Color(0xFF7553F6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.video_call,
-              color: Colors.white,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  'New Video Session',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF7553F6),
-                  ),
-                ),
-                Text(
-                  'For: ${widget.className}',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSessionDetailsCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+      body: Form(
+        key: _formKey,
+        child: ListView(
+          padding: const EdgeInsets.all(20),
           children: [
-            const Text(
-              'Session Details',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            // Header
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, 4),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    width: 80,
+                    height: 80,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF7553F6).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(40),
+                    ),
+                    child: const Icon(
+                      Icons.video_call,
+                      size: 40,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    isEditing
+                        ? 'Update Video Session'
+                        : 'Schedule Video Session',
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'For ${widget.classModel.name}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isEditing
+                        ? 'Modify your video session details'
+                        : 'Set up a recurring video session for your students',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _titleController,
-              decoration: const InputDecoration(
-                labelText: 'Session Title',
-                hintText: 'e.g., Weekly Math Review',
-                prefixIcon: Icon(Icons.title),
-              ),
-              validator: (value) {
-                if (value == null || value.trim().isEmpty) {
-                  return 'Please enter a session title';
-                }
-                return null;
-              },
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _descriptionController,
-              decoration: const InputDecoration(
-                labelText: 'Description (Optional)',
-                hintText: 'Brief description of what will be covered...',
-                prefixIcon: Icon(Icons.description),
-              ),
-              maxLines: 3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 
-  Widget _buildScheduleCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Schedule',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
+            const SizedBox(height: 24),
+
+            // Basic Information
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, 4),
+                    blurRadius: 20,
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 16),
-            
-            // Time Selection
-            ListTile(
-              leading: const Icon(Icons.schedule, color: Color(0xFF7553F6)),
-              title: const Text('Start Time'),
-              subtitle: Text(_formatTime(_selectedTime)),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: _selectTime,
-            ),
-            
-            const Divider(),
-            
-            // Duration Selection
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Duration',
+                    'Session Information',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Session Title
+                  const Text(
+                    'Session Title *',
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: FontWeight.w500,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
                     ),
                   ),
                   const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _titleController,
+                    decoration: InputDecoration(
+                      hintText: 'e.g., Weekly Math Review',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF7553F6), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter a session title';
+                      }
+                      return null;
+                    },
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Description
+                  const Text(
+                    'Description',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _descriptionController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Describe what will be covered in this session',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF7553F6), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Video Link
+                  const Text(
+                    'Video Link (Optional)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _videoLinkController,
+                    decoration: InputDecoration(
+                      hintText:
+                          'https://meet.google.com/xyz or https://zoom.us/j/123',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF7553F6), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                      prefixIcon: const Icon(Icons.link),
+                    ),
+                    validator: (value) {
+                      if (value != null && value.isNotEmpty) {
+                        final uri = Uri.tryParse(value);
+                        if (uri == null || !uri.hasScheme) {
+                          return 'Please enter a valid URL';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 24),
+
+            // Schedule Settings
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    offset: const Offset(0, 4),
+                    blurRadius: 20,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Schedule Settings',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+
+                  // Time and Duration Row
+                  Row(
+                    children: [
+                      // Start Time
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Start Time *',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            InkWell(
+                              onTap: _selectTime,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[50],
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.access_time,
+                                        color: Color(0xFF7553F6)),
+                                    const SizedBox(width: 12),
+                                    Text(
+                                      _selectedTime.format(context),
+                                      style: const TextStyle(
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      // Duration
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Duration *',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: Colors.black87,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<int>(
+                              value: _durationMinutes,
+                              decoration: InputDecoration(
+                                filled: true,
+                                fillColor: Colors.grey[50],
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 16),
+                              ),
+                              items: [30, 45, 60, 90, 120].map((minutes) {
+                                return DropdownMenuItem(
+                                  value: minutes,
+                                  child: Text('$minutes minutes'),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                setState(() {
+                                  _durationMinutes = value!;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Recurring Days
+                  const Text(
+                    'Recurring Days *',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Select the days when this session should repeat',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   Wrap(
                     spacing: 8,
-                    children: _durationOptions.map((duration) {
-                      final isSelected = _durationMinutes == duration;
-                      return ChoiceChip(
-                        label: Text('${duration}min'),
-                        selected: isSelected,
-                        onSelected: (selected) {
-                          if (selected) {
-                            setState(() {
-                              _durationMinutes = duration;
-                            });
-                          }
+                    runSpacing: 8,
+                    children: WeekDay.weekDays.map((day) {
+                      final isSelected = _selectedDays.contains(day.value);
+                      return InkWell(
+                        onTap: () {
+                          setState(() {
+                            if (isSelected) {
+                              _selectedDays.remove(day.value);
+                            } else {
+                              _selectedDays.add(day.value);
+                            }
+                          });
                         },
-                        selectedColor: const Color(0xFF7553F6).withValues(alpha: 0.2),
-                        labelStyle: TextStyle(
-                          color: isSelected ? const Color(0xFF7553F6) : null,
-                          fontWeight: isSelected ? FontWeight.bold : null,
+                        child: Container(
+                          width: 45,
+                          height: 45,
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? const Color(0xFF7553F6)
+                                : Colors.grey[200],
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Center(
+                            child: Text(
+                              day.shortName,
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: isSelected
+                                    ? Colors.white
+                                    : Colors.grey[700],
+                              ),
+                            ),
+                          ),
                         ),
                       );
                     }).toList(),
+                  ),
+
+                  if (_selectedDays.isNotEmpty) ...[
+                    const SizedBox(height: 12),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7553F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'Session will repeat on: ${WeekDay.getDaysString(_selectedDays)}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Color(0xFF7553F6),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 32),
+
+            // Create/Update Button
+            SizedBox(
+              width: double.infinity,
+              height: 56,
+              child: ElevatedButton(
+                onPressed: _isLoading ? null : _handleSubmit,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF7553F6),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
+                child: _isLoading
+                    ? const CircularProgressIndicator(color: Colors.white)
+                    : Text(
+                        isEditing ? 'Update Session' : 'Create Session',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            // Info Container
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.blue.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.blue.withOpacity(0.3),
+                ),
+              ),
+              child: const Row(
+                children: [
+                  Icon(
+                    Icons.info_outline,
+                    color: Colors.blue,
+                    size: 20,
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Session instances will be automatically generated for the next 4 weeks. Students will receive notifications before each session.',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.blue,
+                      ),
+                    ),
                   ),
                 ],
               ),
@@ -248,125 +561,11 @@ class _CreateVideoSessionScreenState extends State<CreateVideoSessionScreen> {
     );
   }
 
-  Widget _buildRecurringDaysCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Recurring Days',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Select the days this session will repeat',
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
-              ),
-            ),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: List.generate(_dayNames.length, (index) {
-                final dayIndex = index + 1; // 1=Monday, 7=Sunday
-                final isSelected = _selectedDays.contains(dayIndex);
-                
-                return FilterChip(
-                  label: Text(_dayNames[index]),
-                  selected: isSelected,
-                  onSelected: (selected) {
-                    setState(() {
-                      if (selected) {
-                        _selectedDays.add(dayIndex);
-                      } else {
-                        _selectedDays.remove(dayIndex);
-                      }
-                    });
-                  },
-                  selectedColor: const Color(0xFF7553F6).withValues(alpha: 0.2),
-                  checkmarkColor: const Color(0xFF7553F6),
-                  labelStyle: TextStyle(
-                    color: isSelected ? const Color(0xFF7553F6) : null,
-                    fontWeight: isSelected ? FontWeight.bold : null,
-                  ),
-                );
-              }),
-            ),
-            if (_selectedDays.isEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Text(
-                  'Please select at least one day',
-                  style: TextStyle(
-                    color: Colors.red[600],
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCreateButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: ElevatedButton(
-        onPressed: _isLoading ? null : _createVideoSession,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFF7553F6),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-        ),
-        child: _isLoading
-            ? const SizedBox(
-                width: 24,
-                height: 24,
-                child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
-              )
-            : const Text(
-                'Create Video Session',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-      ),
-    );
-  }
-
   Future<void> _selectTime() async {
     final TimeOfDay? picked = await showTimePicker(
       context: context,
       initialTime: _selectedTime,
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: Color(0xFF7553F6),
-            ),
-          ),
-          child: child!,
-        );
-      },
     );
-
     if (picked != null && picked != _selectedTime) {
       setState(() {
         _selectedTime = picked;
@@ -374,15 +573,11 @@ class _CreateVideoSessionScreenState extends State<CreateVideoSessionScreen> {
     }
   }
 
-  String _formatTime(TimeOfDay time) {
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
+  void _handleSubmit() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
 
-  Future<void> _createVideoSession() async {
-    if (!_formKey.currentState!.validate()) return;
-    
     if (_selectedDays.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -398,59 +593,77 @@ class _CreateVideoSessionScreenState extends State<CreateVideoSessionScreen> {
     });
 
     try {
-      final videoSessionService = context.read<VideoSessionService>();
+      final videoSessionService =
+          Provider.of<VideoSessionService>(context, listen: false);
+      final timeString =
+          '${_selectedTime.hour.toString().padLeft(2, '0')}:${_selectedTime.minute.toString().padLeft(2, '0')}';
 
-      // Convert TimeOfDay to DateTime for today
-      final now = DateTime.now();
-      final startTime = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        _selectedTime.hour,
-        _selectedTime.minute,
-      );
+      if (widget.sessionToEdit != null) {
+        // Update existing session
+        final updateRequest = UpdateVideoSessionRequest(
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          durationMinutes: _durationMinutes,
+          startTime: timeString,
+          recurringDays: _selectedDays,
+          videoLink: _videoLinkController.text.trim().isNotEmpty
+              ? _videoLinkController.text.trim()
+              : null,
+        );
 
-      final session = await videoSessionService.createVideoSession(
-        classId: widget.classId,
-        title: _titleController.text.trim(),
-        description: _descriptionController.text.trim().isEmpty 
-            ? null 
-            : _descriptionController.text.trim(),
-        durationMinutes: _durationMinutes,
-        startTime: startTime,
-        recurringDays: List.from(_selectedDays)..sort(),
-      );
+        final updatedSession = await videoSessionService.updateVideoSession(
+          widget.sessionToEdit!.id,
+          updateRequest,
+        );
 
-      if (session != null) {
-        if (mounted) {
+        if (updatedSession != null) {
+          Navigator.pop(context);
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Video session "${session.title}" created successfully!'),
+            const SnackBar(
+              content: Text('Video session updated successfully'),
               backgroundColor: Colors.green,
-              duration: const Duration(seconds: 3),
             ),
           );
-          Navigator.pop(context, true); // Return true to indicate success
         }
       } else {
-        throw Exception('Failed to create video session');
+        // Create new session
+        final createRequest = CreateVideoSessionRequest(
+          classId: widget.classModel.id,
+          title: _titleController.text.trim(),
+          description: _descriptionController.text.trim(),
+          durationMinutes: _durationMinutes,
+          startTime: timeString,
+          recurringDays: _selectedDays,
+          videoLink: _videoLinkController.text.trim().isNotEmpty
+              ? _videoLinkController.text.trim()
+              : null,
+        );
+
+        final newSession =
+            await videoSessionService.createVideoSession(createRequest);
+
+        if (newSession != null) {
+          Navigator.pop(context);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Video session created successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+        }
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error creating video session: $e'),
-            backgroundColor: Colors.red,
-            duration: const Duration(seconds: 4),
-          ),
-        );
-      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _isLoading = false;
+      });
     }
   }
 }

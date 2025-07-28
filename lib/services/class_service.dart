@@ -1,324 +1,466 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../model/class_model.dart';
+import 'supabase_service.dart';
 
-// Class Model
-class SchoolClass {
-  final String id;
-  final String teacherId;
-  final String name;
-  final String? description;
-  final String subject;
-  final String? gradeLevel;
-  final String classCode;
-  final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-  final int? enrolledCount;
-
-  SchoolClass({
-    required this.id,
-    required this.teacherId,
-    required this.name,
-    this.description,
-    required this.subject,
-    this.gradeLevel,
-    required this.classCode,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-    this.enrolledCount,
-  });
-
-  factory SchoolClass.fromMap(Map<String, dynamic> map) {
-    return SchoolClass(
-      id: map['id'] ?? '',
-      teacherId: map['teacher_id'] ?? '',
-      name: map['name'] ?? '',
-      description: map['description'],
-      subject: map['subject'] ?? 'Mathematics',
-      gradeLevel: map['grade_level'],
-      classCode: map['class_code'] ?? '',
-      isActive: map['is_active'] ?? true,
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
-      enrolledCount: map['enrolled_count'],
-    );
-  }
-}
-
-// Class Enrollment Model
-class ClassEnrollment {
-  final String id;
-  final String classId;
-  final String studentId;
-  final DateTime enrolledAt;
-  final bool isActive;
-  // Additional fields from joined data
-  final String? className;
-  final String? teacherName;
-  final String? studentName;
-
-  ClassEnrollment({
-    required this.id,
-    required this.classId,
-    required this.studentId,
-    required this.enrolledAt,
-    required this.isActive,
-    this.className,
-    this.teacherName,
-    this.studentName,
-  });
-
-  factory ClassEnrollment.fromMap(Map<String, dynamic> map) {
-    return ClassEnrollment(
-      id: map['id'] ?? '',
-      classId: map['class_id'] ?? '',
-      studentId: map['student_id'] ?? '',
-      enrolledAt: DateTime.parse(map['enrolled_at']),
-      isActive: map['is_active'] ?? true,
-      className: map['class_name'],
-      teacherName: map['teacher_name'],
-      studentName: map['student_name'],
-    );
-  }
-}
-
-// Class Service
 class ClassService extends ChangeNotifier {
   static final ClassService _instance = ClassService._internal();
   factory ClassService() => _instance;
   ClassService._internal();
-  
-  static ClassService get instance => _instance;
 
-  final SupabaseClient _supabase = Supabase.instance.client;
-  
-  List<SchoolClass> _teacherClasses = [];
-  List<ClassEnrollment> _studentEnrollments = [];
+  final SupabaseService _supabaseService = SupabaseService.instance;
+  SupabaseClient get _client => _supabaseService.client;
+
+  List<ClassModel> _teacherClasses = [];
+  List<ClassModel> _studentClasses = [];
+  final List<ClassEnrollment> _classEnrollments = [];
   bool _isLoading = false;
 
-  // Getters
-  List<SchoolClass> get teacherClasses => _teacherClasses;
-  List<ClassEnrollment> get studentEnrollments => _studentEnrollments;
+  List<ClassModel> get teacherClasses => _teacherClasses;
+  List<ClassModel> get studentClasses => _studentClasses;
+  List<ClassEnrollment> get classEnrollments => _classEnrollments;
   bool get isLoading => _isLoading;
 
-  // Teacher Methods
-  Future<List<SchoolClass>> fetchTeacherClasses() async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      final userId = _supabase.auth.currentUser?.id;
-      if (userId == null) throw Exception('User not authenticated');
-
-      final response = await _supabase
-          .from('classes')
-          .select('''
-            *,
-            enrolled_count:class_enrollments(count)
-          ''')
-          .eq('teacher_id', userId)
-          .eq('is_active', true)
-          .order('created_at', ascending: false);
-
-      _teacherClasses = (response as List).map((data) {
-        // Handle the count from the nested query
-        final enrolledCount = data['enrolled_count'] is List 
-          ? (data['enrolled_count'] as List).length 
-          : 0;
-        
-        return SchoolClass.fromMap({
-          ...data,
-          'enrolled_count': enrolledCount,
-        });
-      }).toList();
-
-      return _teacherClasses;
-    } catch (e) {
-      debugPrint('Error fetching teacher classes: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 
-  Future<SchoolClass> createClass({
-    required String name,
-    String? description,
-    String subject = 'Mathematics', 
-    String? gradeLevel,
-  }) async {
+  // Teacher CRUD Operations
+
+  /// Create a new class (Teachers only)
+  Future<ClassModel?> createClass(CreateClassRequest request) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      _setLoading(true);
+
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      final response = await _supabase
+      final response = await _client
           .from('classes')
           .insert({
             'teacher_id': userId,
-            'name': name.trim(),
-            'description': description?.trim(),
-            'subject': subject,
-            'grade_level': gradeLevel?.trim(),
+            'name': request.name,
+            'description': request.description,
+            'subject': request.subject,
+            'grade_level': request.gradeLevel,
+            'created_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
           })
           .select()
           .single();
 
-      final newClass = SchoolClass.fromMap(response);
+      final newClass = ClassModel.fromJson(response);
       _teacherClasses.insert(0, newClass);
       notifyListeners();
 
       return newClass;
     } catch (e) {
-      debugPrint('Error creating class: $e');
+      debugPrint('Create Class Error: $e');
       rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<void> updateClass(
-    String classId, {
-    String? name,
-    String? description, 
-    String? subject,
-    String? gradeLevel,
-    bool? isActive,
-  }) async {
+  /// Get all classes for a teacher
+  Future<List<ClassModel>> getTeacherClasses({bool refresh = false}) async {
     try {
-      final updates = <String, dynamic>{};
-      if (name != null) updates['name'] = name.trim();
-      if (description != null) updates['description'] = description.trim();
-      if (subject != null) updates['subject'] = subject;
-      if (gradeLevel != null) updates['grade_level'] = gradeLevel.trim();
-      if (isActive != null) updates['is_active'] = isActive;
+      if (!refresh && _teacherClasses.isNotEmpty) {
+        return _teacherClasses;
+      }
 
-      await _supabase
-          .from('classes')
-          .update(updates)
-          .eq('id', classId);
+      _setLoading(true);
 
-      // Refresh classes
-      await fetchTeacherClasses();
-    } catch (e) {
-      debugPrint('Error updating class: $e');
-      rethrow;
-    }
-  }
-
-  Future<void> deleteClass(String classId) async {
-    try {
-      await _supabase
-          .from('classes')
-          .update({'is_active': false})
-          .eq('id', classId);
-
-      _teacherClasses.removeWhere((c) => c.id == classId);
-      notifyListeners();
-    } catch (e) {
-      debugPrint('Error deleting class: $e');
-      rethrow;
-    }
-  }
-
-  // Student Methods
-  Future<List<ClassEnrollment>> fetchStudentEnrollments() async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      final response = await _supabase
-          .from('class_enrollments')
+      final response = await _client
+          .from('classes')
           .select('''
             *,
-            classes!inner(name, subject, grade_level, teacher_id),
-            teacher:classes(teacher_id, user_profiles!inner(full_name))
+            class_enrollments!inner(count)
           ''')
-          .eq('student_id', userId)
+          .eq('teacher_id', userId)
           .eq('is_active', true)
-          .order('enrolled_at', ascending: false);
+          .order('created_at', ascending: false);
 
-      _studentEnrollments = (response as List).map((data) {
-        final classData = data['classes'];
-        final teacherData = data['teacher']?['user_profiles'];
-        
-        return ClassEnrollment.fromMap({
+      _teacherClasses = response.map<ClassModel>((data) {
+        final enrollmentCount = data['class_enrollments'] as List? ?? [];
+        return ClassModel.fromJson({
           ...data,
-          'class_name': classData?['name'],
-          'teacher_name': teacherData?['full_name'],
+          'enrolled_students_count': enrollmentCount.length,
         });
       }).toList();
 
-      return _studentEnrollments;
+      notifyListeners();
+      return _teacherClasses;
     } catch (e) {
-      debugPrint('Error fetching student enrollments: $e');
+      debugPrint('Get Teacher Classes Error: $e');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Get all classes a student is enrolled in
+  Future<List<ClassModel>> getStudentClasses({bool refresh = false}) async {
+    try {
+      if (!refresh && _studentClasses.isNotEmpty) {
+        return _studentClasses;
+      }
+
+      _setLoading(true);
+
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      final response = await _client
+          .from('class_enrollments')
+          .select('''
+            classes!inner(*,
+              user_profiles!classes_teacher_id_fkey(full_name)
+            )
+          ''')
+          .eq('student_id', userId)
+          .eq('is_active', true)
+          .eq('classes.is_active', true)
+          .order('enrolled_at', ascending: false);
+
+      _studentClasses = response.map<ClassModel>((data) {
+        final classData = data['classes'];
+        final teacherProfile = classData['user_profiles'];
+        return ClassModel.fromJson({
+          ...classData,
+          'teacher_name': teacherProfile?['full_name'],
+        });
+      }).toList();
+
+      notifyListeners();
+      return _studentClasses;
+    } catch (e) {
+      debugPrint('Get Student Classes Error: $e');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Get a specific class by ID
+  Future<ClassModel?> getClassById(String classId) async {
+    try {
+      final response = await _client.from('classes').select('''
+            *,
+            user_profiles!classes_teacher_id_fkey(full_name),
+            class_enrollments(count)
+          ''').eq('id', classId).single();
+
+      final teacherProfile = response['user_profiles'];
+      final enrollments = response['class_enrollments'] as List? ?? [];
+
+      return ClassModel.fromJson({
+        ...response,
+        'teacher_name': teacherProfile?['full_name'],
+        'enrolled_students_count': enrollments.length,
+      });
+    } catch (e) {
+      debugPrint('Get Class By ID Error: $e');
+      return null;
+    }
+  }
+
+  /// Update a class (Teachers only)
+  Future<ClassModel?> updateClass(
+      String classId, UpdateClassRequest request) async {
+    try {
+      _setLoading(true);
+
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      final response = await _client
+          .from('classes')
+          .update(request.toJson())
+          .eq('id', classId)
+          .eq('teacher_id', userId)
+          .select()
+          .single();
+
+      final updatedClass = ClassModel.fromJson(response);
+
+      // Update local cache
+      final index = _teacherClasses.indexWhere((c) => c.id == classId);
+      if (index != -1) {
+        _teacherClasses[index] = updatedClass;
+        notifyListeners();
+      }
+
+      return updatedClass;
+    } catch (e) {
+      debugPrint('Update Class Error: $e');
       rethrow;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  Future<Map<String, dynamic>> joinClassByCode(String classCode) async {
+  /// Delete a class (Teachers only)
+  Future<bool> deleteClass(String classId) async {
     try {
-      final response = await _supabase
-          .rpc('join_class_by_code', params: {'p_class_code': classCode.trim().toUpperCase()});
+      _setLoading(true);
 
-      final result = response as Map<String, dynamic>;
-      
-      if (result['success'] == true) {
-        // Refresh enrollments
-        await fetchStudentEnrollments();
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client
+          .from('classes')
+          .update({
+            'is_active': false,
+            'updated_at': DateTime.now().toIso8601String()
+          })
+          .eq('id', classId)
+          .eq('teacher_id', userId);
+
+      // Remove from local cache
+      _teacherClasses.removeWhere((c) => c.id == classId);
+      notifyListeners();
+
+      return true;
+    } catch (e) {
+      debugPrint('Delete Class Error: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Student Operations
+
+  /// Join a class using class code (Students only)
+  Future<JoinClassResult> joinClassByCode(String classCode) async {
+    try {
+      _setLoading(true);
+
+      final response = await _client.rpc('join_class_by_code', params: {
+        'p_class_code': classCode.toUpperCase(),
+      });
+
+      final result = JoinClassResult.fromJson(response);
+
+      if (result.success) {
+        // Refresh student classes to include the new enrollment
+        await getStudentClasses(refresh: true);
       }
-      
+
       return result;
     } catch (e) {
-      debugPrint('Error joining class: $e');
-      return {'success': false, 'error': 'Failed to join class: $e'};
+      debugPrint('Join Class Error: $e');
+      return JoinClassResult(
+        success: false,
+        error: 'Failed to join class: ${e.toString()}',
+      );
+    } finally {
+      _setLoading(false);
     }
   }
 
-  Future<void> leaveClass(String enrollmentId) async {
+  /// Leave a class (Students only)
+  Future<bool> leaveClass(String classId) async {
     try {
-      await _supabase
+      _setLoading(true);
+
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client
           .from('class_enrollments')
           .update({'is_active': false})
-          .eq('id', enrollmentId);
+          .eq('class_id', classId)
+          .eq('student_id', userId);
 
-      _studentEnrollments.removeWhere((e) => e.id == enrollmentId);
+      // Remove from local cache
+      _studentClasses.removeWhere((c) => c.id == classId);
       notifyListeners();
+
+      return true;
     } catch (e) {
-      debugPrint('Error leaving class: $e');
-      rethrow;
+      debugPrint('Leave Class Error: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Get class enrollments for teachers
-  Future<List<ClassEnrollment>> getClassStudents(String classId) async {
+  // Class Enrollment Management
+
+  /// Get all students enrolled in a class (Teachers only)
+  Future<List<ClassEnrollment>> getClassEnrollments(String classId) async {
     try {
-      final response = await _supabase
+      final response = await _client
           .from('class_enrollments')
           .select('''
             *,
-            student:user_profiles!inner(full_name, email, grade)
+            user_profiles!class_enrollments_student_id_fkey(
+              full_name,
+              email,
+              grade
+            )
           ''')
           .eq('class_id', classId)
           .eq('is_active', true)
           .order('enrolled_at', ascending: false);
 
-      return (response as List).map((data) {
-        final studentData = data['student'];
-        
-        return ClassEnrollment.fromMap({
+      return response.map<ClassEnrollment>((data) {
+        final studentProfile = data['user_profiles'];
+        return ClassEnrollment.fromJson({
           ...data,
-          'student_name': studentData?['full_name'],
+          'student_name': studentProfile?['full_name'],
+          'student_email': studentProfile?['email'],
+          'student_grade': studentProfile?['grade'],
         });
       }).toList();
     } catch (e) {
-      debugPrint('Error fetching class students: $e');
-      rethrow;
+      debugPrint('Get Class Enrollments Error: $e');
+      return [];
+    }
+  }
+
+  /// Remove a student from class (Teachers only)
+  Future<bool> removeStudentFromClass(String classId, String studentId) async {
+    try {
+      _setLoading(true);
+
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      // Verify teacher owns this class
+      final classExists = await _client
+          .from('classes')
+          .select('id')
+          .eq('id', classId)
+          .eq('teacher_id', userId)
+          .maybeSingle();
+
+      if (classExists == null) {
+        throw Exception('Class not found or access denied');
+      }
+
+      await _client
+          .from('class_enrollments')
+          .update({'is_active': false})
+          .eq('class_id', classId)
+          .eq('student_id', studentId);
+
+      return true;
+    } catch (e) {
+      debugPrint('Remove Student Error: $e');
+      return false;
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  // Real-time subscriptions
+
+  /// Subscribe to class updates for a teacher
+  RealtimeChannel subscribeToTeacherClasses(String teacherId) {
+    return _client
+        .channel('teacher_classes_$teacherId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'classes',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'teacher_id',
+            value: teacherId,
+          ),
+          callback: (payload) {
+            getTeacherClasses(refresh: true);
+          },
+        )
+        .subscribe();
+  }
+
+  /// Subscribe to enrollment changes for a class
+  RealtimeChannel subscribeToClassEnrollments(String classId) {
+    return _client
+        .channel('class_enrollments_$classId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'class_enrollments',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'class_id',
+            value: classId,
+          ),
+          callback: (payload) {
+            // Refresh enrollments for this class
+            notifyListeners();
+          },
+        )
+        .subscribe();
+  }
+
+  /// Subscribe to student class changes
+  RealtimeChannel subscribeToStudentClasses(String studentId) {
+    return _client
+        .channel('student_classes_$studentId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'class_enrollments',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'student_id',
+            value: studentId,
+          ),
+          callback: (payload) {
+            getStudentClasses(refresh: true);
+          },
+        )
+        .subscribe();
+  }
+
+  // Utility methods
+
+  /// Clear all cached data
+  void clearCache() {
+    _teacherClasses.clear();
+    _studentClasses.clear();
+    _classEnrollments.clear();
+    notifyListeners();
+  }
+
+  /// Check if user is enrolled in a specific class
+  bool isEnrolledInClass(String classId) {
+    return _studentClasses.any((c) => c.id == classId);
+  }
+
+  /// Get class by code (for validation)
+  Future<ClassModel?> getClassByCode(String classCode) async {
+    try {
+      final response = await _client
+          .from('classes')
+          .select('''
+            *,
+            user_profiles!classes_teacher_id_fkey(full_name)
+          ''')
+          .eq('class_code', classCode.toUpperCase())
+          .eq('is_active', true)
+          .maybeSingle();
+
+      if (response == null) return null;
+
+      final teacherProfile = response['user_profiles'];
+      return ClassModel.fromJson({
+        ...response,
+        'teacher_name': teacherProfile?['full_name'],
+      });
+    } catch (e) {
+      debugPrint('Get Class By Code Error: $e');
+      return null;
     }
   }
 }

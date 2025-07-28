@@ -64,7 +64,7 @@ List<Menu> sidebarMenus2 = [
 // Student Navigation Items
 List<Menu> bottomNavItems = [
   Menu(
-    title: "Topics",
+    title: "Home",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
         artboard: "HOME",
@@ -78,43 +78,36 @@ List<Menu> bottomNavItems = [
         stateMachineName: "SEARCH_Interactivity"),
   ),
   Menu(
-    title: "Activity",
+    title: "Performance",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
         artboard: "LIKE/STAR",
         stateMachineName: "STAR_Interactivity"),
   ),
-  Menu(
-    title: "Profile",
-    rive: RiveModel(
-        src: "assets/RiveAssets/icons.riv",
-        artboard: "USER",
-        stateMachineName: "USER_Interactivity"),
-  ),
 ];
 
-// Teacher Navigation Items - Simplified for student-focused app
+// Teacher Navigation Items - Simplified
 List<Menu> teacherNavItems = [
   Menu(
     title: "Classes",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
-        artboard: "USER",
-        stateMachineName: "USER_Interactivity"),
+        artboard: "SEARCH",
+        stateMachineName: "SEARCH_Interactivity"),
   ),
   Menu(
-    title: "Activity",
+    title: "Shared Chats",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
-        artboard: "LIKE/STAR",
-        stateMachineName: "STAR_Interactivity"),
+        artboard: "CHAT",
+        stateMachineName: "CHAT_Interactivity"),
   ),
   Menu(
     title: "Profile",
     rive: RiveModel(
         src: "assets/RiveAssets/icons.riv",
-        artboard: "BELL",
-        stateMachineName: "BELL_Interactivity"),
+        artboard: "USER",
+        stateMachineName: "USER_Interactivity"),
   ),
 ];
 

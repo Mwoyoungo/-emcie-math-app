@@ -15,12 +15,17 @@ class SharedChatDetailScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final session = sharedChat.chatSession;
-    final correctAnswers = session.messages.where((msg) => 
-      !msg.isUser && msg.text.toUpperCase().contains('[CORRECT]')).length;
-    final wrongAnswers = session.messages.where((msg) => 
-      !msg.isUser && msg.text.toUpperCase().contains('[WRONG]')).length;
+    final correctAnswers = session.messages
+        .where((msg) =>
+            !msg.isUser && msg.text.toUpperCase().contains('[CORRECT]'))
+        .length;
+    final wrongAnswers = session.messages
+        .where(
+            (msg) => !msg.isUser && msg.text.toUpperCase().contains('[WRONG]'))
+        .length;
     final totalQuestions = correctAnswers + wrongAnswers;
-    final accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100) : 0.0;
+    final accuracy =
+        totalQuestions > 0 ? (correctAnswers / totalQuestions * 100) : 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -50,7 +55,7 @@ class SharedChatDetailScreen extends StatelessWidget {
         children: [
           // Chat Info Header
           _buildChatInfoHeader(session, correctAnswers, wrongAnswers, accuracy),
-          
+
           // Chat Messages
           Expanded(
             child: Container(
@@ -113,10 +118,10 @@ class SharedChatDetailScreen extends StatelessWidget {
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(16),
                 ),
-                child: Center(
+                child: const Center(
                   child: Text(
                     'S', // Student
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
@@ -129,9 +134,9 @@ class SharedChatDetailScreen extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'Student Chat',
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -148,7 +153,8 @@ class SharedChatDetailScreen extends StatelessWidget {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
@@ -164,9 +170,9 @@ class SharedChatDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Topic
           Container(
             width: double.infinity,
@@ -198,9 +204,9 @@ class SharedChatDetailScreen extends StatelessWidget {
               ],
             ),
           ),
-          
+
           const SizedBox(height: 16),
-          
+
           // Performance Stats
           Row(
             children: [
@@ -237,7 +243,7 @@ class SharedChatDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Student message functionality removed for simplified schema
         ],
       ),
@@ -324,7 +330,7 @@ class SharedChatDetailScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Delete Shared Chat'),
-        content: Text(
+        content: const Text(
           'Are you sure you want to delete this shared chat?',
         ),
         actions: [

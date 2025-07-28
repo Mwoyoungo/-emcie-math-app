@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rive_animation/services/chat_sharing_service.dart';
 import 'package:rive_animation/screens/teacher/shared_chat_detail_screen.dart';
+import '../../widgets/next_video_session_widget.dart';
 
 class TeacherSharedChatsScreen extends StatefulWidget {
   const TeacherSharedChatsScreen({super.key});
 
   @override
-  State<TeacherSharedChatsScreen> createState() => _TeacherSharedChatsScreenState();
+  State<TeacherSharedChatsScreen> createState() =>
+      _TeacherSharedChatsScreenState();
 }
 
 class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
@@ -37,18 +39,40 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
           final sharedChats = chatSharingService.teacherSharedChats;
 
           if (sharedChats.isEmpty) {
-            return _buildEmptyState();
+            return SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Next Video Session Widget for Teachers
+                  const NextVideoSessionWidget(),
+                  
+                  // Empty State
+                  _buildEmptyState(),
+                ],
+              ),
+            );
           }
 
           return RefreshIndicator(
             onRefresh: () => chatSharingService.fetchTeacherSharedChats(),
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: sharedChats.length,
-              itemBuilder: (context, index) {
-                final sharedChat = sharedChats[index];
-                return _buildSharedChatCard(sharedChat);
-              },
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  // Next Video Session Widget for Teachers
+                  const NextVideoSessionWidget(),
+                  
+                  // Shared Chats List
+                  ListView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(16),
+                    itemCount: sharedChats.length,
+                    itemBuilder: (context, index) {
+                      final sharedChat = sharedChats[index];
+                      return _buildSharedChatCard(sharedChat);
+                    },
+                  ),
+                ],
+              ),
             ),
           );
         },
@@ -107,10 +131,10 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
                       color: const Color(0xFF7553F6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: Center(
+                    child: const Center(
                       child: Text(
                         'S', // Student
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF7553F6),
@@ -124,12 +148,12 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
                             Expanded(
                               child: Text(
                                 'Student Chat',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
@@ -159,10 +183,11 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              
+
               // Topic and Message Count
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: Colors.blue.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
@@ -187,11 +212,12 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
                 ),
               ),
               const SizedBox(height: 8),
-              
+
               // Stats Row
               Row(
                 children: [
-                  _buildStatChip('$messageCount messages', Icons.chat, Colors.green),
+                  _buildStatChip(
+                      '$messageCount messages', Icons.chat, Colors.green),
                   const SizedBox(width: 8),
                   _buildStatChip(
                     'Last: ${_formatTime(lastMessageTime)}',
@@ -200,7 +226,7 @@ class _TeacherSharedChatsScreenState extends State<TeacherSharedChatsScreen> {
                   ),
                 ],
               ),
-              
+
               // Message functionality removed for simplified schema
             ],
           ),

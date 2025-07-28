@@ -1,354 +1,352 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-// import 'package:agora_rtc_engine/agora_rtc_engine.dart'; // Disabled for web compatibility
-
-class VideoSession {
-  final String id;
-  final String classId;
-  final String teacherId;
-  final String title;
-  final String? description;
-  final int durationMinutes;
-  final DateTime startTime; // Time of day as DateTime
-  final List<int> recurringDays; // 1=Monday, 2=Tuesday, etc.
-  final String agoraChannelName;
-  final String? agoraAppId;
-  final bool isActive;
-  final DateTime createdAt;
-  final DateTime updatedAt;
-
-  VideoSession({
-    required this.id,
-    required this.classId,
-    required this.teacherId,
-    required this.title,
-    this.description,
-    required this.durationMinutes,
-    required this.startTime,
-    required this.recurringDays,
-    required this.agoraChannelName,
-    this.agoraAppId,
-    required this.isActive,
-    required this.createdAt,
-    required this.updatedAt,
-  });
-
-  factory VideoSession.fromMap(Map<String, dynamic> map) {
-    return VideoSession(
-      id: map['id'] ?? '',
-      classId: map['class_id'] ?? '',
-      teacherId: map['teacher_id'] ?? '',
-      title: map['title'] ?? '',
-      description: map['description'],
-      durationMinutes: map['duration_minutes'] ?? 0,
-      startTime: _parseTimeFromString(map['start_time']),
-      recurringDays: List<int>.from(map['recurring_days'] ?? []),
-      agoraChannelName: map['agora_channel_name'] ?? '',
-      agoraAppId: map['agora_app_id'],
-      isActive: map['is_active'] ?? true,
-      createdAt: DateTime.parse(map['created_at']),
-      updatedAt: DateTime.parse(map['updated_at']),
-    );
-  }
-
-  static DateTime _parseTimeFromString(String timeString) {
-    // Parse time string like "14:30:00" into today's DateTime
-    final parts = timeString.split(':');
-    final now = DateTime.now();
-    return DateTime(
-      now.year,
-      now.month,
-      now.day,
-      int.parse(parts[0]),
-      int.parse(parts[1]),
-      parts.length > 2 ? int.parse(parts[2]) : 0,
-    );
-  }
-
-  String get timeString {
-    return '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00';
-  }
-}
-
-class VideoSessionInstance {
-  final String id;
-  final String videoSessionId;
-  final DateTime scheduledDate;
-  final DateTime scheduledStartTime;
-  final DateTime scheduledEndTime;
-  final DateTime? actualStartTime;
-  final DateTime? actualEndTime;
-  final String status; // 'scheduled', 'ongoing', 'completed', 'cancelled'
-  final String? agoraToken;
-  final int totalStudentsEnrolled;
-  final int totalStudentsAttended;
-  final DateTime createdAt;
-
-  VideoSessionInstance({
-    required this.id,
-    required this.videoSessionId,
-    required this.scheduledDate,
-    required this.scheduledStartTime,
-    required this.scheduledEndTime,
-    this.actualStartTime,
-    this.actualEndTime,
-    required this.status,
-    this.agoraToken,
-    required this.totalStudentsEnrolled,
-    required this.totalStudentsAttended,
-    required this.createdAt,
-  });
-
-  factory VideoSessionInstance.fromMap(Map<String, dynamic> map) {
-    return VideoSessionInstance(
-      id: map['id'] ?? '',
-      videoSessionId: map['video_session_id'] ?? '',
-      scheduledDate: DateTime.parse(map['scheduled_date']),
-      scheduledStartTime: DateTime.parse(map['scheduled_start_time']),
-      scheduledEndTime: DateTime.parse(map['scheduled_end_time']),
-      actualStartTime: map['actual_start_time'] != null 
-          ? DateTime.parse(map['actual_start_time']) 
-          : null,
-      actualEndTime: map['actual_end_time'] != null 
-          ? DateTime.parse(map['actual_end_time']) 
-          : null,
-      status: map['status'] ?? 'scheduled',
-      agoraToken: map['agora_token'],
-      totalStudentsEnrolled: map['total_students_enrolled'] ?? 0,
-      totalStudentsAttended: map['total_students_attended'] ?? 0,
-      createdAt: DateTime.parse(map['created_at']),
-    );
-  }
-
-  bool get isScheduledToday {
-    final today = DateTime.now();
-    return scheduledDate.year == today.year &&
-           scheduledDate.month == today.month &&
-           scheduledDate.day == today.day;
-  }
-
-  Duration get timeUntilStart {
-    return scheduledStartTime.difference(DateTime.now());
-  }
-
-  bool get hasStarted {
-    return DateTime.now().isAfter(scheduledStartTime);
-  }
-
-  bool get hasEnded {
-    return DateTime.now().isAfter(scheduledEndTime);
-  }
-
-  bool get isLive {
-    return hasStarted && !hasEnded && status == 'ongoing';
-  }
-}
-
-class SessionAttendance {
-  final String id;
-  final String sessionInstanceId;
-  final String studentId;
-  final DateTime? joinedAt;
-  final DateTime? leftAt;
-  final int totalDurationMinutes;
-  final bool isPresent;
-  final DateTime createdAt;
-
-  SessionAttendance({
-    required this.id,
-    required this.sessionInstanceId,
-    required this.studentId,
-    this.joinedAt,
-    this.leftAt,
-    required this.totalDurationMinutes,
-    required this.isPresent,
-    required this.createdAt,
-  });
-
-  factory SessionAttendance.fromMap(Map<String, dynamic> map) {
-    return SessionAttendance(
-      id: map['id'] ?? '',
-      sessionInstanceId: map['session_instance_id'] ?? '',
-      studentId: map['student_id'] ?? '',
-      joinedAt: map['joined_at'] != null ? DateTime.parse(map['joined_at']) : null,
-      leftAt: map['left_at'] != null ? DateTime.parse(map['left_at']) : null,
-      totalDurationMinutes: map['total_duration_minutes'] ?? 0,
-      isPresent: map['is_present'] ?? false,
-      createdAt: DateTime.parse(map['created_at']),
-    );
-  }
-}
+import '../model/video_session_model.dart';
+import 'supabase_service.dart';
 
 class VideoSessionService extends ChangeNotifier {
   static final VideoSessionService _instance = VideoSessionService._internal();
   factory VideoSessionService() => _instance;
   VideoSessionService._internal();
 
-  static VideoSessionService get instance => _instance;
+  final SupabaseService _supabaseService = SupabaseService.instance;
+  SupabaseClient get _client => _supabaseService.client;
 
-  final SupabaseClient _supabase = Supabase.instance.client;
-  // RtcEngine? _agoraEngine; // Disabled for web compatibility
-
-  List<VideoSession> _teacherVideoSessions = [];
-  List<VideoSessionInstance> _studentUpcomingSessions = [];
-  List<VideoSessionInstance> _teacherSessionInstances = [];
+  List<VideoSession> _teacherSessions = [];
+  List<VideoSessionInstance> _upcomingInstances = [];
+  List<VideoSessionInstance> _studentSessions = [];
   bool _isLoading = false;
 
-  List<VideoSession> get teacherVideoSessions => _teacherVideoSessions;
-  List<VideoSessionInstance> get studentUpcomingSessions => _studentUpcomingSessions;
-  List<VideoSessionInstance> get teacherSessionInstances => _teacherSessionInstances;
+  List<VideoSession> get teacherSessions => _teacherSessions;
+  List<VideoSessionInstance> get upcomingInstances => _upcomingInstances;
+  List<VideoSessionInstance> get studentSessions => _studentSessions;
   bool get isLoading => _isLoading;
 
-  // Initialize Agora Engine - Disabled for web compatibility
-  Future<void> initializeAgora({required String appId}) async {
-    debugPrint('Agora initialization disabled for web compatibility');
-    // try {
-    //   _agoraEngine = createAgoraRtcEngine();
-    //   await _agoraEngine!.initialize(RtcEngineContext(appId: appId));
-    //   await _agoraEngine!.enableVideo();
-    //   debugPrint('Agora initialized successfully');
-    // } catch (e) {
-    //   debugPrint('Error initializing Agora: $e');
-    //   rethrow;
-    // }
+  void _setLoading(bool loading) {
+    _isLoading = loading;
+    notifyListeners();
   }
 
-  // Create a new video session with recurring schedule
-  Future<VideoSession?> createVideoSession({
-    required String classId,
-    required String title,
-    String? description,
-    required int durationMinutes,
-    required DateTime startTime,
-    required List<int> recurringDays,
-  }) async {
+  // Generate unique channel name
+  String _generateChannelName() {
+    final timestamp = DateTime.now().millisecondsSinceEpoch;
+    final random = (timestamp % 10000).toString().padLeft(4, '0');
+    return 'session_$random';
+  }
+
+  /// Create a new video session (Teachers only)
+  Future<VideoSession?> createVideoSession(CreateVideoSessionRequest request) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      // Generate unique channel name
-      final channelName = 'class_${classId}_${DateTime.now().millisecondsSinceEpoch}';
+      final channelName = _generateChannelName();
 
-      final response = await _supabase.from('video_sessions').insert({
-        'class_id': classId,
-        'teacher_id': userId,
-        'title': title,
-        'description': description,
-        'duration_minutes': durationMinutes,
-        'start_time': '${startTime.hour.toString().padLeft(2, '0')}:${startTime.minute.toString().padLeft(2, '0')}:00',
-        'recurring_days': recurringDays,
-        'agora_channel_name': channelName,
-      }).select().single();
+      final response = await _client
+          .from('video_sessions')
+          .insert({
+            'class_id': request.classId,
+            'teacher_id': userId,
+            'title': request.title,
+            'description': request.description,
+            'duration_minutes': request.durationMinutes,
+            'start_time': request.startTime,
+            'recurring_days': request.recurringDays,
+            'agora_channel_name': channelName,
+            'video_link': request.videoLink,
+            'created_at': DateTime.now().toIso8601String(),
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .select('''
+            *,
+            classes!inner(name)
+          ''')
+          .single();
 
-      final videoSession = VideoSession.fromMap(response);
-      _teacherVideoSessions.add(videoSession);
+      final responseMap = Map<String, dynamic>.from(response);
+      final classData = Map<String, dynamic>.from(responseMap['classes']);
+      
+      final newSession = VideoSession.fromJson({
+        ...responseMap,
+        'class_name': classData['name'],
+      });
+
+      _teacherSessions.insert(0, newSession);
       notifyListeners();
-
-      debugPrint('Video session created: ${videoSession.id}');
-      return videoSession;
+      
+      return newSession;
     } catch (e) {
-      debugPrint('Error creating video session: $e');
-      return null;
+      debugPrint('Create Video Session Error: $e');
+      rethrow;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Fetch teacher's video sessions
-  Future<List<VideoSession>> fetchTeacherVideoSessions() async {
+  /// Get all video sessions for a teacher
+  Future<List<VideoSession>> getTeacherVideoSessions({bool refresh = false}) async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      if (!refresh && _teacherSessions.isNotEmpty) {
+        return _teacherSessions;
+      }
 
-      final userId = _supabase.auth.currentUser?.id;
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      final response = await _supabase
+      final response = await _client
           .from('video_sessions')
-          .select('*')
+          .select('''
+            *,
+            classes!inner(name)
+          ''')
           .eq('teacher_id', userId)
           .eq('is_active', true)
           .order('created_at', ascending: false);
 
-      _teacherVideoSessions = (response as List)
-          .map((data) => VideoSession.fromMap(data))
-          .toList();
+      _teacherSessions = response.map<VideoSession>((data) {
+        final dataMap = Map<String, dynamic>.from(data);
+        final classData = Map<String, dynamic>.from(dataMap['classes']);
+        
+        return VideoSession.fromJson({
+          ...dataMap,
+          'class_name': classData['name'],
+        });
+      }).toList();
 
-      return _teacherVideoSessions;
-    } catch (e) {
-      debugPrint('Error fetching teacher video sessions: $e');
-      rethrow;
-    } finally {
-      _isLoading = false;
       notifyListeners();
+      return _teacherSessions;
+    } catch (e) {
+      debugPrint('Get Teacher Video Sessions Error: $e');
+      return [];
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Fetch upcoming video session instances for students
-  Future<List<VideoSessionInstance>> fetchStudentUpcomingSessions() async {
+  /// Get video sessions for a specific class
+  Future<List<VideoSession>> getClassVideoSessions(String classId) async {
     try {
-      _isLoading = true;
-      notifyListeners();
+      final response = await _client
+          .from('video_sessions')
+          .select('''
+            *,
+            classes!inner(name),
+            user_profiles!video_sessions_teacher_id_fkey(full_name)
+          ''')
+          .eq('class_id', classId)
+          .eq('is_active', true)
+          .order('created_at', ascending: false);
 
-      final userId = _supabase.auth.currentUser?.id;
+      return response.map<VideoSession>((data) {
+        final dataMap = Map<String, dynamic>.from(data);
+        final classData = Map<String, dynamic>.from(dataMap['classes']);
+        final profileData = Map<String, dynamic>.from(dataMap['user_profiles']);
+        
+        return VideoSession.fromJson({
+          ...dataMap,
+          'class_name': classData['name'],
+          'teacher_name': profileData['full_name'],
+        });
+      }).toList();
+    } catch (e) {
+      debugPrint('Get Class Video Sessions Error: $e');
+      return [];
+    }
+  }
+
+  /// Get upcoming session instances for a teacher
+  Future<List<VideoSessionInstance>> getUpcomingSessionInstances({bool refresh = false}) async {
+    try {
+      if (!refresh && _upcomingInstances.isNotEmpty) {
+        return _upcomingInstances;
+      }
+
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      // Get sessions for classes the student is enrolled in
-      final response = await _supabase
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+
+      final response = await _client
           .from('video_session_instances')
           .select('''
             *,
-            video_sessions!inner(
-              class_id,
-              title,
-              classes!inner(
-                id,
+            video_sessions!inner(*,
+              classes!inner(name)
+            )
+          ''')
+          .eq('video_sessions.teacher_id', userId)
+          .gte('scheduled_date', startOfToday.toIso8601String().split('T')[0])
+          .inFilter('status', ['scheduled', 'ongoing'])
+          .order('scheduled_start_time', ascending: true)
+          .limit(20);
+
+      _upcomingInstances = response.map<VideoSessionInstance>((data) {
+        final dataMap = Map<String, dynamic>.from(data);
+        final videoSessionData = Map<String, dynamic>.from(dataMap['video_sessions']);
+        final classData = Map<String, dynamic>.from(videoSessionData['classes']);
+        
+        return VideoSessionInstance.fromJson({
+          ...dataMap,
+          'video_sessions': {
+            ...videoSessionData,
+            'class_name': classData['name'],
+          },
+        });
+      }).toList();
+
+      notifyListeners();
+      return _upcomingInstances;
+    } catch (e) {
+      debugPrint('Get Upcoming Session Instances Error: $e');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Get student's upcoming sessions
+  Future<List<VideoSessionInstance>> getStudentUpcomingSessions({bool refresh = false}) async {
+    try {
+      if (!refresh && _studentSessions.isNotEmpty) {
+        return _studentSessions;
+      }
+
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      final now = DateTime.now();
+      final startOfToday = DateTime(now.year, now.month, now.day);
+
+      // Get sessions for classes the student is enrolled in
+      final response = await _client
+          .from('video_session_instances')
+          .select('''
+            *,
+            video_sessions!inner(*,
+              classes!inner(name,
                 class_enrollments!inner(student_id)
               )
             )
           ''')
           .eq('video_sessions.classes.class_enrollments.student_id', userId)
           .eq('video_sessions.classes.class_enrollments.is_active', true)
-          .gte('scheduled_start_time', DateTime.now().toIso8601String())
+          .gte('scheduled_date', startOfToday.toIso8601String().split('T')[0])
+          .inFilter('status', ['scheduled', 'ongoing'])
           .order('scheduled_start_time', ascending: true)
           .limit(20);
 
-      _studentUpcomingSessions = (response as List)
-          .map((data) => VideoSessionInstance.fromMap(data))
-          .toList();
+      _studentSessions = response.map<VideoSessionInstance>((data) {
+        final dataMap = Map<String, dynamic>.from(data);
+        final videoSessionData = Map<String, dynamic>.from(dataMap['video_sessions']);
+        final classData = Map<String, dynamic>.from(videoSessionData['classes']);
+        
+        return VideoSessionInstance.fromJson({
+          ...dataMap,
+          'video_sessions': {
+            ...videoSessionData,
+            'class_name': classData['name'],
+          },
+        });
+      }).toList();
 
-      return _studentUpcomingSessions;
+      notifyListeners();
+      return _studentSessions;
     } catch (e) {
-      debugPrint('Error fetching student upcoming sessions: $e');
+      debugPrint('Get Student Upcoming Sessions Error: $e');
+      return [];
+    } finally {
+      _setLoading(false);
+    }
+  }
+
+  /// Update a video session (Teachers only)
+  Future<VideoSession?> updateVideoSession(String sessionId, UpdateVideoSessionRequest request) async {
+    try {
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      final response = await _client
+          .from('video_sessions')
+          .update(request.toJson())
+          .eq('id', sessionId)
+          .eq('teacher_id', userId)
+          .select('''
+            *,
+            classes!inner(name)
+          ''')
+          .single();
+
+      final responseMap = Map<String, dynamic>.from(response);
+      final classData = Map<String, dynamic>.from(responseMap['classes']);
+      
+      final updatedSession = VideoSession.fromJson({
+        ...responseMap,
+        'class_name': classData['name'],
+      });
+      
+      // Update local cache
+      final index = _teacherSessions.indexWhere((s) => s.id == sessionId);
+      if (index != -1) {
+        _teacherSessions[index] = updatedSession;
+        notifyListeners();
+      }
+      
+      return updatedSession;
+    } catch (e) {
+      debugPrint('Update Video Session Error: $e');
       rethrow;
     } finally {
-      _isLoading = false;
-      notifyListeners();
+      _setLoading(false);
     }
   }
 
-  // Fetch session instances for teacher
-  Future<List<VideoSessionInstance>> fetchTeacherSessionInstances(String videoSessionId) async {
+  /// Delete a video session (Teachers only)
+  Future<bool> deleteVideoSession(String sessionId) async {
     try {
-      final response = await _supabase
-          .from('video_session_instances')
-          .select('*')
-          .eq('video_session_id', videoSessionId)
-          .order('scheduled_date', ascending: true);
+      _setLoading(true);
+      
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
 
-      _teacherSessionInstances = (response as List)
-          .map((data) => VideoSessionInstance.fromMap(data))
-          .toList();
+      await _client
+          .from('video_sessions')
+          .update({
+            'is_active': false,
+            'updated_at': DateTime.now().toIso8601String()
+          })
+          .eq('id', sessionId)
+          .eq('teacher_id', userId);
 
-      return _teacherSessionInstances;
+      // Remove from local cache
+      _teacherSessions.removeWhere((s) => s.id == sessionId);
+      notifyListeners();
+      
+      return true;
     } catch (e) {
-      debugPrint('Error fetching session instances: $e');
-      rethrow;
+      debugPrint('Delete Video Session Error: $e');
+      return false;
+    } finally {
+      _setLoading(false);
     }
   }
 
-  // Start a video session instance
+  /// Start a session instance
   Future<bool> startSessionInstance(String instanceId) async {
     try {
-      await _supabase
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client
           .from('video_session_instances')
           .update({
             'status': 'ongoing',
@@ -356,25 +354,23 @@ class VideoSessionService extends ChangeNotifier {
           })
           .eq('id', instanceId);
 
-      // Update local list
-      final index = _teacherSessionInstances.indexWhere((instance) => instance.id == instanceId);
-      if (index != -1) {
-        // Refresh the specific instance
-        await fetchTeacherSessionInstances(_teacherSessionInstances[index].videoSessionId);
-      }
-
-      notifyListeners();
+      // Refresh data
+      await getUpcomingSessionInstances(refresh: true);
+      
       return true;
     } catch (e) {
-      debugPrint('Error starting session instance: $e');
+      debugPrint('Start Session Instance Error: $e');
       return false;
     }
   }
 
-  // End a video session instance
+  /// End a session instance
   Future<bool> endSessionInstance(String instanceId) async {
     try {
-      await _supabase
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) throw Exception('User not authenticated');
+
+      await _client
           .from('video_session_instances')
           .update({
             'status': 'completed',
@@ -382,197 +378,271 @@ class VideoSessionService extends ChangeNotifier {
           })
           .eq('id', instanceId);
 
-      // Calculate and update attendance counts
-      await _updateAttendanceCounts(instanceId);
-
-      // Update local list
-      final index = _teacherSessionInstances.indexWhere((instance) => instance.id == instanceId);
-      if (index != -1) {
-        await fetchTeacherSessionInstances(_teacherSessionInstances[index].videoSessionId);
-      }
-
-      notifyListeners();
+      // Refresh data
+      await getUpcomingSessionInstances(refresh: true);
+      
       return true;
     } catch (e) {
-      debugPrint('Error ending session instance: $e');
+      debugPrint('End Session Instance Error: $e');
       return false;
     }
   }
 
-  // Record student joining session
-  Future<bool> recordStudentJoin(String instanceId) async {
+  /// Join a session (Students)
+  Future<bool> joinSession(String instanceId) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      await _supabase.from('video_session_attendance').insert({
-        'session_instance_id': instanceId,
-        'student_id': userId,
-        'joined_at': DateTime.now().toIso8601String(),
-        'is_present': true,
-      });
+      // Record attendance
+      await _client
+          .from('video_session_attendance')
+          .upsert({
+            'session_instance_id': instanceId,
+            'student_id': userId,
+            'joined_at': DateTime.now().toIso8601String(),
+            'is_present': true,
+          });
 
       return true;
     } catch (e) {
-      // If already exists, update join time
-      try {
-        await _supabase
-            .from('video_session_attendance')
-            .update({
-              'joined_at': DateTime.now().toIso8601String(),
-              'is_present': true,
-            })
-            .eq('session_instance_id', instanceId)
-            .eq('student_id', _supabase.auth.currentUser!.id);
-        return true;
-      } catch (e2) {
-        debugPrint('Error recording student join: $e2');
-        return false;
-      }
+      debugPrint('Join Session Error: $e');
+      return false;
     }
   }
 
-  // Record student leaving session
-  Future<bool> recordStudentLeave(String instanceId) async {
+  /// Record student joining session (alias for joinSession)
+  Future<bool> recordStudentJoin(String instanceId) async {
+    return await joinSession(instanceId);
+  }
+
+  /// Leave a session (Students)
+  Future<bool> leaveSession(String instanceId) async {
     try {
-      final userId = _supabase.auth.currentUser?.id;
+      final userId = _client.auth.currentUser?.id;
       if (userId == null) throw Exception('User not authenticated');
 
-      // Get join time to calculate duration
-      final attendanceResponse = await _supabase
+      // Get current attendance record
+      final attendance = await _client
           .from('video_session_attendance')
-          .select('joined_at')
+          .select()
           .eq('session_instance_id', instanceId)
           .eq('student_id', userId)
+          .maybeSingle();
+
+      if (attendance != null) {
+        final joinedAt = DateTime.parse(attendance['joined_at'] as String);
+        final leftAt = DateTime.now();
+        final durationMinutes = leftAt.difference(joinedAt).inMinutes;
+
+        await _client
+            .from('video_session_attendance')
+            .update({
+              'left_at': leftAt.toIso8601String(),
+              'total_duration_minutes': durationMinutes,
+            })
+            .eq('id', attendance['id']);
+      }
+
+      return true;
+    } catch (e) {
+      debugPrint('Leave Session Error: $e');
+      return false;
+    }
+  }
+
+  /// Get session attendance
+  Future<List<VideoSessionAttendance>> getSessionAttendance(String instanceId) async {
+    try {
+      final response = await _client
+          .from('video_session_attendance')
+          .select('''
+            *,
+            user_profiles!video_session_attendance_student_id_fkey(
+              full_name,
+              email
+            )
+          ''')
+          .eq('session_instance_id', instanceId)
+          .order('joined_at', ascending: false);
+
+      return response.map<VideoSessionAttendance>((data) {
+        final dataMap = Map<String, dynamic>.from(data);
+        final studentProfile = dataMap['user_profiles'] != null 
+          ? Map<String, dynamic>.from(dataMap['user_profiles'])
+          : null;
+          
+        return VideoSessionAttendance.fromJson({
+          ...dataMap,
+          'student_name': studentProfile?['full_name'],
+          'student_email': studentProfile?['email'],
+        });
+      }).toList();
+    } catch (e) {
+      debugPrint('Get Session Attendance Error: $e');
+      return [];
+    }
+  }
+
+  /// Get session instance by ID
+  Future<VideoSessionInstance?> getSessionInstance(String instanceId) async {
+    try {
+      final response = await _client
+          .from('video_session_instances')
+          .select('''
+            *,
+            video_sessions!inner(*,
+              classes!inner(name),
+              user_profiles!video_sessions_teacher_id_fkey(full_name)
+            )
+          ''')
+          .eq('id', instanceId)
           .single();
 
-      final joinedAt = DateTime.parse(attendanceResponse['joined_at']);
-      final duration = DateTime.now().difference(joinedAt).inMinutes;
-
-      await _supabase
-          .from('video_session_attendance')
-          .update({
-            'left_at': DateTime.now().toIso8601String(),
-            'total_duration_minutes': duration,
-          })
-          .eq('session_instance_id', instanceId)
-          .eq('student_id', userId);
-
-      return true;
+      final responseMap = Map<String, dynamic>.from(response);
+      final videoSessionData = Map<String, dynamic>.from(responseMap['video_sessions']);
+      final classData = Map<String, dynamic>.from(videoSessionData['classes']);
+      final profileData = Map<String, dynamic>.from(videoSessionData['user_profiles']);
+      
+      return VideoSessionInstance.fromJson({
+        ...responseMap,
+        'video_sessions': {
+          ...videoSessionData,
+          'class_name': classData['name'],
+          'teacher_name': profileData['full_name'],
+        },
+      });
     } catch (e) {
-      debugPrint('Error recording student leave: $e');
-      return false;
+      debugPrint('Get Session Instance Error: $e');
+      return null;
     }
   }
 
-  // Get attendance report for a session instance
-  Future<List<SessionAttendance>> getSessionAttendanceReport(String instanceId) async {
+  /// Check if student can join session
+  Future<bool> canStudentJoinSession(String instanceId) async {
     try {
-      final response = await _supabase
-          .from('video_session_attendance')
-          .select('*')
-          .eq('session_instance_id', instanceId)
-          .order('joined_at', ascending: true);
+      final userId = _client.auth.currentUser?.id;
+      if (userId == null) return false;
 
-      return (response as List)
-          .map((data) => SessionAttendance.fromMap(data))
-          .toList();
-    } catch (e) {
-      debugPrint('Error fetching attendance report: $e');
-      rethrow;
-    }
-  }
-
-  // Join Agora channel - Disabled for web compatibility
-  Future<bool> joinAgoraChannel({
-    required String channelName,
-    required String token,
-    required int uid,
-  }) async {
-    debugPrint('Agora channel join disabled for web compatibility');
-    return false;
-    // try {
-    //   if (_agoraEngine == null) throw Exception('Agora not initialized');
-    //   await _agoraEngine!.joinChannel(
-    //     token: token,
-    //     channelId: channelName,
-    //     uid: uid,
-    //     options: const ChannelMediaOptions(),
-    //   );
-    //   debugPrint('Joined Agora channel: $channelName');
-    //   return true;
-    // } catch (e) {
-    //   debugPrint('Error joining Agora channel: $e');
-    //   return false;
-    // }
-  }
-
-  // Leave Agora channel - Disabled for web compatibility
-  Future<bool> leaveAgoraChannel() async {
-    debugPrint('Agora channel leave disabled for web compatibility');
-    return false;
-    // try {
-    //   if (_agoraEngine == null) return false;
-    //   await _agoraEngine!.leaveChannel();
-    //   debugPrint('Left Agora channel');
-    //   return true;
-    // } catch (e) {
-    //   debugPrint('Error leaving Agora channel: $e');
-    //   return false;
-    // }
-  }
-
-  // Dispose Agora engine - Disabled for web compatibility
-  Future<void> disposeAgora() async {
-    debugPrint('Agora dispose disabled for web compatibility');
-    // try {
-    //   await _agoraEngine?.leaveChannel();
-    //   await _agoraEngine?.release();
-    //   _agoraEngine = null;
-    //   debugPrint('Agora disposed');
-    // } catch (e) {
-    //   debugPrint('Error disposing Agora: $e');
-    // }
-  }
-
-  // Helper method to update attendance counts
-  Future<void> _updateAttendanceCounts(String instanceId) async {
-    try {
-      final countResponse = await _supabase
-          .from('video_session_attendance')
-          .select('is_present')
-          .eq('session_instance_id', instanceId);
-
-      final attendedCount = (countResponse as List)
-          .where((record) => record['is_present'] == true)
-          .length;
-
-      await _supabase
+      // Check if student is enrolled in the class for this session
+      final response = await _client
           .from('video_session_instances')
-          .update({'total_students_attended': attendedCount})
-          .eq('id', instanceId);
+          .select('''
+            video_sessions!inner(
+              class_id,
+              classes!inner(
+                class_enrollments!inner(student_id, is_active)
+              )
+            )
+          ''')
+          .eq('id', instanceId)
+          .eq('video_sessions.classes.class_enrollments.student_id', userId)
+          .eq('video_sessions.classes.class_enrollments.is_active', true)
+          .maybeSingle();
+
+      return response != null;
     } catch (e) {
-      debugPrint('Error updating attendance counts: $e');
-    }
-  }
-
-  // Delete video session
-  Future<bool> deleteVideoSession(String sessionId) async {
-    try {
-      await _supabase
-          .from('video_sessions')
-          .update({'is_active': false})
-          .eq('id', sessionId);
-
-      _teacherVideoSessions.removeWhere((session) => session.id == sessionId);
-      notifyListeners();
-
-      return true;
-    } catch (e) {
-      debugPrint('Error deleting video session: $e');
+      debugPrint('Can Student Join Session Error: $e');
       return false;
     }
   }
 
-  // RtcEngine? get agoraEngine => _agoraEngine; // Disabled for web compatibility
+  /// Generate session instances for next 4 weeks
+  Future<void> generateSessionInstances(String sessionId) async {
+    try {
+      await _client.rpc('generate_session_instances', params: {
+        'p_video_session_id': sessionId,
+      });
+    } catch (e) {
+      debugPrint('Generate Session Instances Error: $e');
+    }
+  }
+
+  /// Real-time subscriptions
+
+  /// Subscribe to teacher's video sessions
+  RealtimeChannel subscribeToTeacherSessions(String teacherId) {
+    return _client
+        .channel('teacher_video_sessions_$teacherId')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'video_sessions',
+          filter: PostgresChangeFilter(
+            type: PostgresChangeFilterType.eq,
+            column: 'teacher_id',
+            value: teacherId,
+          ),
+          callback: (payload) {
+            getTeacherVideoSessions(refresh: true);
+          },
+        )
+        .subscribe();
+  }
+
+  /// Subscribe to session instances
+  RealtimeChannel subscribeToSessionInstances() {
+    return _client
+        .channel('video_session_instances')
+        .onPostgresChanges(
+          event: PostgresChangeEvent.all,
+          schema: 'public',
+          table: 'video_session_instances',
+          callback: (payload) {
+            getUpcomingSessionInstances(refresh: true);
+            getStudentUpcomingSessions(refresh: true);
+          },
+        )
+        .subscribe();
+  }
+
+  /// Clear all cached data
+  void clearCache() {
+    _teacherSessions.clear();
+    _upcomingInstances.clear();
+    _studentSessions.clear();
+    notifyListeners();
+  }
+
+  /// Format time for display
+  static String formatTime(String time24) {
+    try {
+      final parts = time24.split(':');
+      final hour = int.parse(parts[0]);
+      final minute = int.parse(parts[1]);
+      
+      final period = hour >= 12 ? 'PM' : 'AM';
+      final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
+      
+      return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
+    } catch (e) {
+      return time24;
+    }
+  }
+
+  /// Parse time from display format
+  static String parseTime(String displayTime) {
+    try {
+      final regex = RegExp(r'(\d{1,2}):(\d{2})\s*(AM|PM)', caseSensitive: false);
+      final match = regex.firstMatch(displayTime);
+      
+      if (match != null) {
+        final hour = int.parse(match.group(1)!);
+        final minute = int.parse(match.group(2)!);
+        final period = match.group(3)!.toUpperCase();
+        
+        int hour24 = hour;
+        if (period == 'PM' && hour != 12) {
+          hour24 += 12;
+        } else if (period == 'AM' && hour == 12) {
+          hour24 = 0;
+        }
+        
+        return '${hour24.toString().padLeft(2, '0')}:${minute.toString().padLeft(2, '0')}';
+      }
+    } catch (e) {
+      debugPrint('Parse time error: $e');
+    }
+    return displayTime;
+  }
 }

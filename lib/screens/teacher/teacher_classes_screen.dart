@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
-import 'package:rive_animation/services/class_service.dart';
-import 'package:rive_animation/services/user_service.dart';
-import 'package:rive_animation/screens/teacher/teacher_class_detail_screen.dart';
+
+import '../../services/class_service.dart';
+import '../../services/user_service.dart';
+import '../../services/video_session_service.dart';
+import '../../model/class_model.dart';
+import '../../model/video_session_model.dart';
+import '../../widgets/countdown_timer.dart';
+import 'create_class_screen.dart';
+import 'class_detail_screen.dart';
 
 class TeacherClassesScreen extends StatefulWidget {
+  const TeacherClassesScreen({super.key});
+
   @override
-  _TeacherClassesScreenState createState() => _TeacherClassesScreenState();
+  State<TeacherClassesScreen> createState() => _TeacherClassesScreenState();
 }
 
 class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
@@ -15,478 +23,347 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      context.read<ClassService>().fetchTeacherClasses();
+      _loadClasses();
     });
+  }
+
+  void _loadClasses() {
+    final classService = Provider.of<ClassService>(context, listen: false);
+    final videoSessionService =
+        Provider.of<VideoSessionService>(context, listen: false);
+
+    // Load both classes and upcoming video sessions
+    classService.getTeacherClasses(refresh: true);
+    videoSessionService.getUpcomingSessionInstances(refresh: true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF8F9FE),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            _buildHeader(context),
-            // Classes List
-            Expanded(
-              child: Consumer<ClassService>(
-                builder: (context, classService, child) {
-                  if (classService.isLoading) {
-                    return const Center(child: CircularProgressIndicator());
-                  }
-
-                  final classes = classService.teacherClasses;
-                  
-                  if (classes.isEmpty) {
-                    return _buildEmptyState(context);
-                  }
-
-                  return _buildClassesList(classes);
-                },
+      backgroundColor: const Color(0xFFF8F9FA),
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: const Text(
+          'My Classes',
+          style: TextStyle(
+            color: Colors.black,
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateClassScreen(),
+                ),
+              ).then((_) => _loadClasses());
+            },
+            icon: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7553F6),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: const Icon(
+                Icons.add,
+                color: Colors.white,
+                size: 20,
               ),
             ),
-          ],
-        ),
+          ),
+          const SizedBox(width: 16),
+        ],
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [Color(0xFF7553F6), Color(0xFF9C7DF7)],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF7553F6).withValues(alpha: 0.4),
-              blurRadius: 12,
-              offset: const Offset(0, 6),
+      body: Consumer2<ClassService, UserService>(
+        builder: (context, classService, userService, child) {
+          if (classService.isLoading) {
+            return const Center(
+              child: CircularProgressIndicator(
+                color: Color(0xFF7553F6),
+              ),
+            );
+          }
+
+          if (classService.teacherClasses.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              await classService.getTeacherClasses(refresh: true);
+            },
+            child: ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: classService.teacherClasses.length,
+              itemBuilder: (context, index) {
+                final classModel = classService.teacherClasses[index];
+                return _buildClassCard(classModel);
+              },
             ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          onPressed: () => _showCreateClassDialog(context),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          icon: const Icon(Icons.add, color: Colors.white, size: 24),
-          label: const Text(
-            'Create Class',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
-              fontSize: 16,
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
-  Widget _buildHeader(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Color(0xFF7553F6),
-            Color(0xFF9C7DF7),
-            Color(0xFFAD88F2),
-          ],
-        ),
-        borderRadius: const BorderRadius.only(
-          bottomLeft: Radius.circular(32),
-          bottomRight: Radius.circular(32),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF7553F6).withValues(alpha: 0.3),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+  Widget _buildEmptyState() {
+    return Center(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          const SizedBox(height: 20),
-          Text(
-            'My Classes',
-            style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-              color: Colors.white,
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              color: const Color(0xFF7553F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(60),
+            ),
+            child: const Icon(
+              Icons.school_outlined,
+              size: 60,
+              color: Color(0xFF7553F6),
+            ),
+          ),
+          const SizedBox(height: 24),
+          const Text(
+            'No Classes Yet',
+            style: TextStyle(
+              fontSize: 24,
               fontWeight: FontWeight.bold,
-              fontSize: 32,
+              color: Colors.black87,
             ),
           ),
           const SizedBox(height: 8),
-          Consumer<UserService>(
-            builder: (context, userService, child) {
-              return Text(
-                'Welcome back, ${userService.currentUser?.fullName ?? 'Teacher'}!',
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 18,
-                  fontWeight: FontWeight.w500,
-                ),
-              );
-            },
+          const Text(
+            'Create your first class to start\nmanaging students and content',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 16,
+              color: Colors.grey,
+              height: 1.5,
+            ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 32),
+          ElevatedButton.icon(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const CreateClassScreen(),
+                ),
+              ).then((_) => _loadClasses());
+            },
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text(
+              'Create Class',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7553F6),
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              elevation: 0,
+            ),
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildEmptyState(BuildContext context) {
-    return Center(
-      child: Container(
-        margin: const EdgeInsets.all(40),
-        padding: const EdgeInsets.all(48),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.grey.withValues(alpha: 0.1),
-              blurRadius: 20,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 120,
-              height: 120,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    Color(0xFF7553F6),
-                    Color(0xFF9C7DF7),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(60),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF7553F6).withValues(alpha: 0.3),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: const Icon(
-                Icons.school_outlined,
-                size: 60,
-                color: Colors.white,
-              ),
-            ),
-            const SizedBox(height: 32),
-            const Text(
-              'No Classes Yet',
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1a1a1a),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              'Create your first class to start teaching and managing your students',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey[600],
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 40),
-            Container(
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [Color(0xFF7553F6), Color(0xFF9C7DF7)],
-                ),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF7553F6).withValues(alpha: 0.3),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
-                  ),
-                ],
-              ),
-              child: ElevatedButton.icon(
-                onPressed: () => _showCreateClassDialog(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.transparent,
-                  shadowColor: Colors.transparent,
-                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                ),
-                icon: const Icon(Icons.add, color: Colors.white, size: 24),
-                label: const Text(
-                  'Create Your First Class',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildClassesList(List<SchoolClass> classes) {
-    return ListView.builder(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-      itemCount: classes.length,
-      itemBuilder: (context, index) {
-        final schoolClass = classes[index];
-        return _buildModernClassCard(schoolClass, index);
-      },
-    );
-  }
-
-  Widget _buildModernClassCard(SchoolClass schoolClass, int index) {
-    // Generate different gradient colors for variety
-    final gradientColors = [
-      [const Color(0xFF7553F6), const Color(0xFF9C7DF7)],
-      [const Color(0xFF667eea), const Color(0xFF764ba2)],
-      [const Color(0xFFf093fb), const Color(0xFFf5576c)],
-      [const Color(0xFF4facfe), const Color(0xFF00f2fe)],
-      [const Color(0xFF43e97b), const Color(0xFF38f9d7)],
-    ];
-    
-    final colors = gradientColors[index % gradientColors.length];
-    
+  Widget _buildClassCard(ClassModel classModel) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 20),
+      margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
+        color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
-            color: colors[0].withValues(alpha: 0.3),
+            color: Colors.black.withOpacity(0.05),
+            offset: const Offset(0, 4),
             blurRadius: 20,
-            offset: const Offset(0, 8),
           ),
         ],
       ),
       child: Material(
-        borderRadius: BorderRadius.circular(20),
-        color: Colors.white,
+        color: Colors.transparent,
         child: InkWell(
-          onTap: () => _viewClassDetails(schoolClass),
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: colors[0].withValues(alpha: 0.1),
-                width: 1,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ClassDetailScreen(classModel: classModel),
               ),
-            ),
+            ).then((_) => _loadClasses());
+          },
+          borderRadius: BorderRadius.circular(20),
+          child: Padding(
+            padding: const EdgeInsets.all(20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Header with gradient background
-                Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: colors,
-                    ),
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(20),
-                      topRight: Radius.circular(20),
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              schoolClass.name,
-                              style: const TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                            if (schoolClass.description != null) ...[
-                              const SizedBox(height: 6),
-                              Text(
-                                schoolClass.description!,
-                                style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.9),
-                                  fontSize: 14,
-                                  height: 1.3,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
+                Row(
+                  children: [
+                    Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: _getSubjectColor(classModel.subject)
+                            .withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: PopupMenuButton<String>(
-                          onSelected: (value) => _handleClassAction(value, schoolClass),
-                          icon: const Icon(
-                            Icons.more_vert,
-                            color: Colors.white,
-                          ),
-                          itemBuilder: (context) => [
-                            const PopupMenuItem(
-                              value: 'edit',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.edit, size: 20),
-                                  SizedBox(width: 8),
-                                  Text('Edit'),
-                                ],
-                              ),
-                            ),
-                            const PopupMenuItem(
-                              value: 'delete',
-                              child: Row(
-                                children: [
-                                  Icon(Icons.delete, size: 20, color: Colors.red),
-                                  SizedBox(width: 8),
-                                  Text('Delete', style: TextStyle(color: Colors.red)),
-                                ],
-                              ),
-                            ),
-                          ],
-                        ),
+                      child: Icon(
+                        _getSubjectIcon(classModel.subject),
+                        color: _getSubjectColor(classModel.subject),
+                        size: 24,
                       ),
-                    ],
-                  ),
-                ),
-                
-                // Content section
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // Info chips
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          _buildModernInfoChip(
-                            icon: Icons.subject,
-                            label: schoolClass.subject,
-                            backgroundColor: colors[0].withValues(alpha: 0.1),
-                            textColor: colors[0],
-                          ),
-                          if (schoolClass.gradeLevel != null)
-                            _buildModernInfoChip(
-                              icon: Icons.grade,
-                              label: schoolClass.gradeLevel!,
-                              backgroundColor: Colors.green.withValues(alpha: 0.1),
-                              textColor: Colors.green[700]!,
+                          Text(
+                            classModel.name,
+                            style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
                             ),
-                          _buildModernInfoChip(
-                            icon: Icons.people,
-                            label: '${schoolClass.enrolledCount ?? 0} students',
-                            backgroundColor: Colors.orange.withValues(alpha: 0.1),
-                            textColor: Colors.orange[700]!,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${classModel.subject} • Grade ${classModel.gradeLevel}',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey[600],
+                            ),
                           ),
                         ],
                       ),
-                      
-                      const SizedBox(height: 16),
-                      
-                      // Class code section
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              colors[0].withValues(alpha: 0.1),
-                              colors[1].withValues(alpha: 0.05),
+                    ),
+                    PopupMenuButton<String>(
+                      onSelected: (value) {
+                        switch (value) {
+                          case 'share_code':
+                            _showClassCodeDialog(classModel);
+                            break;
+                          case 'edit':
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    CreateClassScreen(classToEdit: classModel),
+                              ),
+                            ).then((_) => _loadClasses());
+                            break;
+                          case 'delete':
+                            _showDeleteDialog(classModel);
+                            break;
+                        }
+                      },
+                      itemBuilder: (context) => [
+                        const PopupMenuItem(
+                          value: 'share_code',
+                          child: Row(
+                            children: [
+                              Icon(Icons.share, size: 20),
+                              SizedBox(width: 12),
+                              Text('Share Class Code'),
                             ],
                           ),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: colors[0].withValues(alpha: 0.2),
+                        ),
+                        const PopupMenuItem(
+                          value: 'edit',
+                          child: Row(
+                            children: [
+                              Icon(Icons.edit, size: 20),
+                              SizedBox(width: 12),
+                              Text('Edit Class'),
+                            ],
                           ),
                         ),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: colors[0],
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                Icons.key,
-                                size: 20,
-                                color: Colors.white,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Class Code',
-                                    style: TextStyle(
-                                      fontSize: 12,
-                                      color: Colors.grey[600],
-                                      fontWeight: FontWeight.w500,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 2),
-                                  Text(
-                                    schoolClass.classCode,
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: colors[0],
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Container(
-                              decoration: BoxDecoration(
-                                color: colors[0].withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: IconButton(
-                                onPressed: () => _copyClassCode(schoolClass.classCode),
-                                icon: Icon(
-                                  Icons.copy,
-                                  size: 20,
-                                  color: colors[0],
-                                ),
-                              ),
-                            ),
-                          ],
+                        const PopupMenuItem(
+                          value: 'delete',
+                          child: Row(
+                            children: [
+                              Icon(Icons.delete, size: 20, color: Colors.red),
+                              SizedBox(width: 12),
+                              Text('Delete Class',
+                                  style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                        ),
+                      ],
+                      icon: const Icon(Icons.more_vert, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                if (classModel.description.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  Text(
+                    classModel.description,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[700],
+                      height: 1.4,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF7553F6).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        classModel.classCode,
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF7553F6),
+                          fontFamily: 'monospace',
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.people_outline,
+                          size: 16,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${classModel.enrolledStudentsCount ?? 0} students',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
+
+                // Next Video Session Countdown
+                _buildNextSessionCountdown(classModel),
               ],
             ),
           ),
@@ -495,36 +372,175 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
     );
   }
 
-  Widget _buildModernInfoChip({
-    required IconData icon,
-    required String label,
-    required Color backgroundColor,
-    required Color textColor,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(
-          color: textColor.withValues(alpha: 0.2),
-        ),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: textColor,
+  Widget _buildNextSessionCountdown(ClassModel classModel) {
+    return Consumer<VideoSessionService>(
+      builder: (context, videoSessionService, child) {
+        // Get next session for this class
+        final nextSession =
+            _getNextSessionForClass(classModel.id, videoSessionService);
+
+        if (nextSession == null) {
+          return const SizedBox.shrink();
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(top: 16),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF7553F6).withValues(alpha: 0.05),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: const Color(0xFF7553F6).withValues(alpha: 0.2),
+            ),
           ),
-          const SizedBox(width: 6),
-          Text(
-            label,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              color: textColor,
-              fontSize: 12,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(
+                    Icons.schedule,
+                    size: 16,
+                    color: Color(0xFF7553F6),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Next Session: ${nextSession.videoSession?.title ?? 'Video Session'}',
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              CountdownTimer(
+                targetTime: nextSession.scheduledStartTime,
+                label: 'Starts in',
+                primaryColor: const Color(0xFF7553F6),
+                showSeconds: false,
+                textStyle: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+                labelStyle: const TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey,
+                ),
+                onComplete: () {
+                  // Refresh the sessions when countdown completes
+                  context
+                      .read<VideoSessionService>()
+                      .getUpcomingSessionInstances(refresh: true);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  VideoSessionInstance? _getNextSessionForClass(
+      String classId, VideoSessionService service) {
+    final upcomingSessions = service.upcomingInstances
+        .where((session) =>
+            session.videoSession?.classId == classId && session.isUpcoming)
+        .toList();
+
+    if (upcomingSessions.isEmpty) return null;
+
+    // Sort by scheduled time and return the earliest
+    upcomingSessions
+        .sort((a, b) => a.scheduledStartTime.compareTo(b.scheduledStartTime));
+    return upcomingSessions.first;
+  }
+
+  void _showClassCodeDialog(ClassModel classModel) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(
+              Icons.share,
+              color: Color(0xFF7553F6),
+            ),
+            SizedBox(width: 12),
+            Text('Class Code'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Share this code with students to join your class:',
+              style: TextStyle(
+                color: Colors.grey[600],
+                fontSize: 16,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFF7553F6).withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: const Color(0xFF7553F6).withOpacity(0.3),
+                ),
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    classModel.classCode,
+                    style: const TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF7553F6),
+                      fontFamily: 'monospace',
+                      letterSpacing: 4,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    classModel.name,
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Clipboard.setData(ClipboardData(text: classModel.classCode));
+              Navigator.pop(context);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Class code copied to clipboard'),
+                  backgroundColor: Color(0xFF7553F6),
+                ),
+              );
+            },
+            child: const Text(
+              'Copy Code',
+              style: TextStyle(color: Color(0xFF7553F6)),
+            ),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text(
+              'Close',
+              style: TextStyle(color: Colors.grey),
             ),
           ),
         ],
@@ -532,57 +548,23 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
     );
   }
 
-  void _copyClassCode(String classCode) {
-    Clipboard.setData(ClipboardData(text: classCode));
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Class code $classCode copied to clipboard'),
-        backgroundColor: const Color(0xFF7553F6),
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  void _viewClassDetails(SchoolClass schoolClass) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => TeacherClassDetailScreen(schoolClass: schoolClass),
-      ),
-    );
-  }
-
-  void _handleClassAction(String action, SchoolClass schoolClass) {
-    switch (action) {
-      case 'edit':
-        _showEditClassDialog(schoolClass);
-        break;
-      case 'delete':
-        _showDeleteConfirmation(schoolClass);
-        break;
-    }
-  }
-
-  void _showCreateClassDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => CreateClassDialog(),
-    );
-  }
-
-  void _showEditClassDialog(SchoolClass schoolClass) {
-    showDialog(
-      context: context,
-      builder: (context) => CreateClassDialog(editClass: schoolClass),
-    );
-  }
-
-  void _showDeleteConfirmation(SchoolClass schoolClass) {
+  void _showDeleteDialog(ClassModel classModel) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Delete Class'),
-        content: Text('Are you sure you want to delete "${schoolClass.name}"?'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Row(
+          children: [
+            Icon(Icons.warning, color: Colors.red),
+            SizedBox(width: 12),
+            Text('Delete Class'),
+          ],
+        ),
+        content: Text(
+          'Are you sure you want to delete "${classModel.name}"? This action cannot be undone.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -591,212 +573,66 @@ class _TeacherClassesScreenState extends State<TeacherClassesScreen> {
           TextButton(
             onPressed: () async {
               Navigator.pop(context);
-              try {
-                await context.read<ClassService>().deleteClass(schoolClass.id);
+              final classService =
+                  Provider.of<ClassService>(context, listen: false);
+              final success = await classService.deleteClass(classModel.id);
+              if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
                     content: Text('Class deleted successfully'),
                     backgroundColor: Colors.green,
                   ),
                 );
-              } catch (e) {
+              } else {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error deleting class: $e'),
+                  const SnackBar(
+                    content: Text('Failed to delete class'),
                     backgroundColor: Colors.red,
                   ),
                 );
               }
             },
-            style: TextButton.styleFrom(foregroundColor: Colors.red),
-            child: const Text('Delete'),
+            child: const Text(
+              'Delete',
+              style: TextStyle(color: Colors.red),
+            ),
           ),
         ],
       ),
     );
   }
-}
 
-class CreateClassDialog extends StatefulWidget {
-  final SchoolClass? editClass;
-
-  const CreateClassDialog({Key? key, this.editClass}) : super(key: key);
-
-  @override
-  _CreateClassDialogState createState() => _CreateClassDialogState();
-}
-
-class _CreateClassDialogState extends State<CreateClassDialog> {
-  final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
-  final _subjectController = TextEditingController();
-  final _gradeLevelController = TextEditingController();
-  bool _isLoading = false;
-
-  @override
-  void initState() {
-    super.initState();
-    if (widget.editClass != null) {
-      _nameController.text = widget.editClass!.name;
-      _descriptionController.text = widget.editClass!.description ?? '';
-      _subjectController.text = widget.editClass!.subject;
-      _gradeLevelController.text = widget.editClass!.gradeLevel ?? '';
-    } else {
-      _subjectController.text = 'Mathematics';
+  Color _getSubjectColor(String subject) {
+    switch (subject.toLowerCase()) {
+      case 'mathematics':
+        return const Color(0xFF7553F6);
+      case 'physics':
+        return const Color(0xFF4CAF50);
+      case 'chemistry':
+        return const Color(0xFF2196F3);
+      case 'biology':
+        return const Color(0xFF8BC34A);
+      case 'english':
+        return const Color(0xFFFF9800);
+      default:
+        return const Color(0xFF7553F6);
     }
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.editClass != null ? 'Edit Class' : 'Create New Class'),
-      content: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextFormField(
-                controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: 'Class Name *',
-                  hintText: 'e.g., Algebra 1 - Period 3',
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a class name';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _descriptionController,
-                decoration: const InputDecoration(
-                  labelText: 'Description',
-                  hintText: 'Brief description of the class',
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _subjectController,
-                decoration: const InputDecoration(
-                  labelText: 'Subject *',
-                  hintText: 'e.g., Mathematics, Physics',
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter a subject';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _gradeLevelController,
-                decoration: const InputDecoration(
-                  labelText: 'Grade Level',
-                  hintText: 'e.g., Grade 8, Year 10',
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _saveClass,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF7553F6),
-          ),
-          child: _isLoading
-              ? const SizedBox(
-                  width: 16,
-                  height: 16,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                  ),
-                )
-              : Text(
-                  widget.editClass != null ? 'Update' : 'Create',
-                  style: const TextStyle(color: Colors.white),
-                ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _saveClass() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() => _isLoading = true);
-
-    try {
-      final classService = context.read<ClassService>();
-
-      if (widget.editClass != null) {
-        // Update existing class
-        await classService.updateClass(
-          widget.editClass!.id,
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-          subject: _subjectController.text.trim(),
-          gradeLevel: _gradeLevelController.text.trim().isEmpty
-              ? null
-              : _gradeLevelController.text.trim(),
-        );
-      } else {
-        // Create new class
-        await classService.createClass(
-          name: _nameController.text.trim(),
-          description: _descriptionController.text.trim().isEmpty
-              ? null
-              : _descriptionController.text.trim(),
-          subject: _subjectController.text.trim(),
-          gradeLevel: _gradeLevelController.text.trim().isEmpty
-              ? null
-              : _gradeLevelController.text.trim(),
-        );
-      }
-
-      Navigator.pop(context);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.editClass != null
-                ? 'Class updated successfully'
-                : 'Class created successfully',
-          ),
-          backgroundColor: Colors.green,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    } finally {
-      setState(() => _isLoading = false);
+  IconData _getSubjectIcon(String subject) {
+    switch (subject.toLowerCase()) {
+      case 'mathematics':
+        return Icons.calculate;
+      case 'physics':
+        return Icons.science;
+      case 'chemistry':
+        return Icons.biotech;
+      case 'biology':
+        return Icons.eco;
+      case 'english':
+        return Icons.book;
+      default:
+        return Icons.school;
     }
-  }
-
-  @override
-  void dispose() {
-    _nameController.dispose();
-    _descriptionController.dispose();
-    _subjectController.dispose();
-    _gradeLevelController.dispose();
-    super.dispose();
   }
 }

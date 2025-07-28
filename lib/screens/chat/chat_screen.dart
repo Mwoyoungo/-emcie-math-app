@@ -11,12 +11,11 @@ import '../../services/user_service.dart';
 import '../../services/chat_session_service.dart';
 import '../../services/performance_service.dart';
 import '../../services/supabase_service.dart';
-import '../../services/chat_sharing_service.dart';
 import '../../utils/responsive_utils.dart';
 
 class ChatScreen extends StatefulWidget {
   final String topicTitle;
-  
+
   const ChatScreen({super.key, required this.topicTitle});
 
   @override
@@ -27,7 +26,7 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final ImagePicker _imagePicker = ImagePicker();
-  
+
   List<ChatMessage> messages = [];
   bool _isInitialized = false;
   bool _isRoseThinking = false;
@@ -45,27 +44,29 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _initializeChatSession() async {
     if (_isInitialized) return;
-    
+
     final userService = Provider.of<UserService>(context, listen: false);
-    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
+    final chatSessionService =
+        Provider.of<ChatSessionService>(context, listen: false);
     final user = userService.currentUser;
-    
+
     if (user == null || !mounted) return;
-    
+
     await chatSessionService.initialize();
-    
+
     // Initializing chat session for topic: ${widget.topicTitle}
     // Session summary: ${chatSessionService.getSessionSummary()}
-    
+
     // Try to resume existing session first
     // Get proper user ID for database integration
-    final userId = SupabaseService.instance.client.auth.currentUser?.id ?? user.email;
-    
+    final userId =
+        SupabaseService.instance.client.auth.currentUser?.id ?? user.email;
+
     final existingSession = await chatSessionService.resumeSession(
       userId: userId,
       topicTitle: widget.topicTitle,
     );
-    
+
     if (existingSession != null && mounted) {
       // Load existing conversation
       // Resuming session with ${existingSession.messages.length} messages
@@ -82,7 +83,7 @@ class _ChatScreenState extends State<ChatScreen> {
         topicTitle: widget.topicTitle,
         grade: user.grade,
       );
-      
+
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -94,9 +95,10 @@ class _ChatScreenState extends State<ChatScreen> {
 
   Future<void> _startAIAssessment(String chatId) async {
     final userService = Provider.of<UserService>(context, listen: false);
-    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
+    final chatSessionService =
+        Provider.of<ChatSessionService>(context, listen: false);
     final user = userService.currentUser;
-    
+
     if (user == null || !mounted) return;
 
     // Show Rose is thinking loader
@@ -115,8 +117,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     try {
       // Send initialization message to AI (this won't be shown to user)
-      final aiResponse = await AIService.getAssessmentResponse(initMessage, chatId: chatId);
-      
+      final aiResponse =
+          await AIService.getAssessmentResponse(initMessage, chatId: chatId);
+
       // Check if widget is still mounted before calling setState
       if (mounted) {
         final aiMessage = ChatMessage(
@@ -127,30 +130,32 @@ class _ChatScreenState extends State<ChatScreen> {
           chatMessageId: aiResponse.chatMessageId,
           executionId: aiResponse.executionId,
         );
-        
+
         setState(() {
           _isRoseThinking = false;
           messages.add(aiMessage);
         });
-        
+
         // Save to session
-        await chatSessionService.addMessage(aiMessage, executionId: aiResponse.executionId, aiChatId: aiResponse.chatId);
+        await chatSessionService.addMessage(aiMessage,
+            executionId: aiResponse.executionId, aiChatId: aiResponse.chatId);
         _scrollToBottom();
       }
     } catch (e) {
       // Fallback welcome message
       if (mounted) {
         final fallbackMessage = ChatMessage(
-          text: "Hi ${userService.firstName}! I'm Mam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
+          text:
+              "Hi ${userService.firstName}! I'm Mam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
           isUser: false,
           timestamp: DateTime.now(),
         );
-        
+
         setState(() {
           _isRoseThinking = false;
           messages.add(fallbackMessage);
         });
-        
+
         await chatSessionService.addMessage(fallbackMessage);
         _scrollToBottom();
       }
@@ -160,10 +165,12 @@ class _ChatScreenState extends State<ChatScreen> {
   void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
 
-    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
-    final performanceService = Provider.of<PerformanceService>(context, listen: false);
+    final chatSessionService =
+        Provider.of<ChatSessionService>(context, listen: false);
+    final performanceService =
+        Provider.of<PerformanceService>(context, listen: false);
     final currentSession = chatSessionService.currentSession;
-    
+
     if (currentSession == null) return;
 
     // Check for help keywords before processing
@@ -175,7 +182,7 @@ class _ChatScreenState extends State<ChatScreen> {
       isUser: true,
       timestamp: DateTime.now(),
     );
-    
+
     if (mounted) {
       setState(() {
         messages.add(userMessage);
@@ -183,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> {
       _messageController.clear();
       _scrollToBottom();
     }
-    
+
     // Save user message to session
     await chatSessionService.addMessage(userMessage);
 
@@ -194,8 +201,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     // Get AI response
     try {
-      final aiResponse = await AIService.getAssessmentResponse(text, chatId: currentSession.chatId);
-      
+      final aiResponse = await AIService.getAssessmentResponse(text,
+          chatId: currentSession.chatId);
+
       // Add AI response
       if (mounted) {
         final aiMessage = ChatMessage(
@@ -206,34 +214,37 @@ class _ChatScreenState extends State<ChatScreen> {
           chatMessageId: aiResponse.chatMessageId,
           executionId: aiResponse.executionId,
         );
-        
+
         setState(() {
           _isRoseThinking = false;
           messages.add(aiMessage);
         });
-        
+
         // Save AI message to session
-        await chatSessionService.addMessage(aiMessage, executionId: aiResponse.executionId, aiChatId: aiResponse.chatId);
-        
+        await chatSessionService.addMessage(aiMessage,
+            executionId: aiResponse.executionId, aiChatId: aiResponse.chatId);
+
         // Track performance if AI response contains correctness feedback
-        _trackPerformanceIfApplicable(text, aiResponse.text, aiResponse.executionId, performanceService);
-        
+        _trackPerformanceIfApplicable(
+            text, aiResponse.text, aiResponse.executionId, performanceService);
+
         _scrollToBottom();
       }
     } catch (e) {
       // Fallback response
       if (mounted) {
         final fallbackMessage = ChatMessage(
-          text: "I apologize, but I'm having trouble connecting right now. Let me try to help you with a practice question instead!\n\nCan you tell me more about what specific aspect of ${widget.topicTitle} you'd like to work on?",
+          text:
+              "I apologize, but I'm having trouble connecting right now. Let me try to help you with a practice question instead!\n\nCan you tell me more about what specific aspect of ${widget.topicTitle} you'd like to work on?",
           isUser: false,
           timestamp: DateTime.now(),
         );
-        
+
         setState(() {
           _isRoseThinking = false;
           messages.add(fallbackMessage);
         });
-        
+
         await chatSessionService.addMessage(fallbackMessage);
         _scrollToBottom();
       }
@@ -243,37 +254,41 @@ class _ChatScreenState extends State<ChatScreen> {
   // Keep the old static questions as fallback only
 
   void _pickImage() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
+    final XFile? image =
+        await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null && mounted) {
-      final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
-      
+      final chatSessionService =
+          Provider.of<ChatSessionService>(context, listen: false);
+
       final imageMessage = ChatMessage(
-        text: "I've received your image! Let me analyze this math problem for you...",
+        text:
+            "I've received your image! Let me analyze this math problem for you...",
         isUser: false,
         imagePath: image.path,
         timestamp: DateTime.now(),
       );
-      
+
       setState(() {
         messages.add(imageMessage);
       });
-      
+
       await chatSessionService.addMessage(imageMessage);
       _scrollToBottom();
-      
+
       // Simulate analysis
       Future.delayed(const Duration(seconds: 2), () async {
         if (mounted) {
           final analysisMessage = ChatMessage(
-            text: "I can see you've shared a problem! Based on what I can observe, let me help you work through this step by step. Could you also type out the specific question so I can provide the most accurate guidance?",
+            text:
+                "I can see you've shared a problem! Based on what I can observe, let me help you work through this step by step. Could you also type out the specific question so I can provide the most accurate guidance?",
             isUser: false,
             timestamp: DateTime.now(),
           );
-          
+
           setState(() {
             messages.add(analysisMessage);
           });
-          
+
           await chatSessionService.addMessage(analysisMessage);
           _scrollToBottom();
         }
@@ -282,21 +297,23 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _takePhoto() async {
-    final XFile? image = await _imagePicker.pickImage(source: ImageSource.camera);
+    final XFile? image =
+        await _imagePicker.pickImage(source: ImageSource.camera);
     if (image != null && mounted) {
-      final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
-      
+      final chatSessionService =
+          Provider.of<ChatSessionService>(context, listen: false);
+
       final photoMessage = ChatMessage(
         text: "Perfect! I can see your math problem.",
         isUser: false,
         imagePath: image.path,
         timestamp: DateTime.now(),
       );
-      
+
       setState(() {
         messages.add(photoMessage);
       });
-      
+
       await chatSessionService.addMessage(photoMessage);
       _scrollToBottom();
     }
@@ -305,10 +322,10 @@ class _ChatScreenState extends State<ChatScreen> {
   void _insertMathSymbol(String symbol) {
     final currentPosition = _messageController.selection.base.offset;
     final currentText = _messageController.text;
-    final newText = currentText.substring(0, currentPosition) + 
-                   symbol + 
-                   currentText.substring(currentPosition);
-    
+    final newText = currentText.substring(0, currentPosition) +
+        symbol +
+        currentText.substring(currentPosition);
+
     _messageController.text = newText;
     _messageController.selection = TextSelection.fromPosition(
       TextPosition(offset: currentPosition + symbol.length),
@@ -317,37 +334,44 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _containsLatex(String text) {
     // Simplified LaTeX detection for common math formats
-    return text.contains('\$') ||                          // Any $ delimiter
-           text.contains('\\frac') ||                      // Fractions
-           text.contains('\\sqrt') ||                      // Square roots
-           text.contains('^') ||                           // Powers
-           text.contains('_') ||                           // Subscripts
-           text.contains('×') ||                           // Multiplication
-           text.contains('÷') ||                           // Division
-           text.contains('≤') || text.contains('≥') ||     // Inequalities
-           text.contains('≠') ||                           // Not equal
-           text.contains('∞') ||                           // Infinity
-           text.contains('π') ||                           // Pi
-           text.contains('√') ||                           // Square root symbol
-           text.contains('∑') || text.contains('∫') ||     // Sum, integral
-           text.contains('\\') && 
-           (text.contains('alpha') || text.contains('beta') || 
-            text.contains('gamma') || text.contains('theta') ||
-            text.contains('sin') || text.contains('cos') || 
-            text.contains('tan') || text.contains('log'));  // Greek letters and functions
+    return text.contains('\$') || // Any $ delimiter
+        text.contains('\\frac') || // Fractions
+        text.contains('\\sqrt') || // Square roots
+        text.contains('^') || // Powers
+        text.contains('_') || // Subscripts
+        text.contains('×') || // Multiplication
+        text.contains('÷') || // Division
+        text.contains('≤') ||
+        text.contains('≥') || // Inequalities
+        text.contains('≠') || // Not equal
+        text.contains('∞') || // Infinity
+        text.contains('π') || // Pi
+        text.contains('√') || // Square root symbol
+        text.contains('∑') ||
+        text.contains('∫') || // Sum, integral
+        text.contains('\\') &&
+            (text.contains('alpha') ||
+                text.contains('beta') ||
+                text.contains('gamma') ||
+                text.contains('theta') ||
+                text.contains('sin') ||
+                text.contains('cos') ||
+                text.contains('tan') ||
+                text.contains('log')); // Greek letters and functions
   }
 
-  void _trackPerformanceIfApplicable(String userAnswer, String aiResponse, String executionId, PerformanceService performanceService) {
+  void _trackPerformanceIfApplicable(String userAnswer, String aiResponse,
+      String executionId, PerformanceService performanceService) {
     // Check if AI response contains correctness feedback
     final upperResponse = aiResponse.toUpperCase();
-    final hasCorrectness = upperResponse.contains('[CORRECT]') || 
-                          upperResponse.contains('[WRONG]') ||
-                          upperResponse.contains('CORRECT') ||
-                          upperResponse.contains('WRONG') ||
-                          upperResponse.contains('WELL DONE') ||
-                          upperResponse.contains('EXCELLENT') ||
-                          upperResponse.contains('INCORRECT') ||
-                          upperResponse.contains('NOT QUITE');
+    final hasCorrectness = upperResponse.contains('[CORRECT]') ||
+        upperResponse.contains('[WRONG]') ||
+        upperResponse.contains('CORRECT') ||
+        upperResponse.contains('WRONG') ||
+        upperResponse.contains('WELL DONE') ||
+        upperResponse.contains('EXCELLENT') ||
+        upperResponse.contains('INCORRECT') ||
+        upperResponse.contains('NOT QUITE');
 
     if (hasCorrectness) {
       // Find the last AI question by looking through previous messages
@@ -371,12 +395,12 @@ class _ChatScreenState extends State<ChatScreen> {
         // Track tutor triggers
         _totalQuestionsAsked++;
         final isCorrect = _parseCorrectness(aiResponse);
-        
+
         if (isCorrect) {
           _consecutiveWrongAnswers = 0; // Reset counter on correct answer
         } else {
           _consecutiveWrongAnswers++;
-          
+
           // Trigger tutor popup after 3 consecutive wrong answers
           if (_consecutiveWrongAnswers >= 3) {
             _showTutorPopup(TutorTriggerType.wrongAnswers);
@@ -394,28 +418,35 @@ class _ChatScreenState extends State<ChatScreen> {
 
   bool _parseCorrectness(String aiResponse) {
     final upperResponse = aiResponse.toUpperCase();
-    
+
     // Look for positive indicators
-    if (upperResponse.contains('[CORRECT]') || upperResponse.contains('CORRECT') ||
-        upperResponse.contains('WELL DONE') || upperResponse.contains('EXCELLENT') ||
-        upperResponse.contains('PERFECT') || upperResponse.contains('GREAT JOB') ||
-        upperResponse.contains('THAT\'S RIGHT') || upperResponse.contains('EXACTLY')) {
+    if (upperResponse.contains('[CORRECT]') ||
+        upperResponse.contains('CORRECT') ||
+        upperResponse.contains('WELL DONE') ||
+        upperResponse.contains('EXCELLENT') ||
+        upperResponse.contains('PERFECT') ||
+        upperResponse.contains('GREAT JOB') ||
+        upperResponse.contains('THAT\'S RIGHT') ||
+        upperResponse.contains('EXACTLY')) {
       return true;
     }
-    
+
     // Look for negative indicators
-    if (upperResponse.contains('[WRONG]') || upperResponse.contains('WRONG') ||
-        upperResponse.contains('INCORRECT') || upperResponse.contains('NOT QUITE') ||
-        upperResponse.contains('TRY AGAIN') || upperResponse.contains('ALMOST')) {
+    if (upperResponse.contains('[WRONG]') ||
+        upperResponse.contains('WRONG') ||
+        upperResponse.contains('INCORRECT') ||
+        upperResponse.contains('NOT QUITE') ||
+        upperResponse.contains('TRY AGAIN') ||
+        upperResponse.contains('ALMOST')) {
       return false;
     }
-    
+
     return false; // Default to false if unclear
   }
 
   void _showTutorPopup(TutorTriggerType triggerType) {
     if (!mounted) return;
-    
+
     showDialog(
       context: context,
       barrierDismissible: true,
@@ -434,10 +465,25 @@ class _ChatScreenState extends State<ChatScreen> {
   void _checkForHelpKeywords(String text) {
     final lowerText = text.toLowerCase();
     final helpKeywords = [
-      'help', 'stuck', 'confused', 'don\'t understand', 'difficult',
-      'hard', 'tutor', 'explain', 'clarify', 'lost', 'need help',
-      'struggling', 'can\'t solve', 'what does', 'how do i',
-      'i need', 'assistance', 'support', 'guide me'
+      'help',
+      'stuck',
+      'confused',
+      'don\'t understand',
+      'difficult',
+      'hard',
+      'tutor',
+      'explain',
+      'clarify',
+      'lost',
+      'need help',
+      'struggling',
+      'can\'t solve',
+      'what does',
+      'how do i',
+      'i need',
+      'assistance',
+      'support',
+      'guide me'
     ];
 
     for (final keyword in helpKeywords) {
@@ -457,9 +503,9 @@ class _ChatScreenState extends State<ChatScreen> {
     // For now, just show a simple message
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(sessionType == TutorSessionType.quickHelp 
-          ? 'Quick Help session requested! A tutor will contact you soon.' 
-          : 'Deep Session booked! You\'ll receive booking details shortly.'),
+        content: Text(sessionType == TutorSessionType.quickHelp
+            ? 'Quick Help session requested! A tutor will contact you soon.'
+            : 'Deep Session booked! You\'ll receive booking details shortly.'),
         backgroundColor: const Color(0xFF7553F6),
         behavior: SnackBarBehavior.floating,
       ),
@@ -516,7 +562,8 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
                       color: const Color(0xFF7553F6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -536,7 +583,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     height: 20,
                     child: CircularProgressIndicator(
                       strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF7553F6)),
+                      valueColor:
+                          AlwaysStoppedAnimation<Color>(Color(0xFF7553F6)),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -583,13 +631,15 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _shareChat() {
-    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
+    final chatSessionService =
+        Provider.of<ChatSessionService>(context, listen: false);
     final currentSession = chatSessionService.currentSession;
-    
+
     if (currentSession == null || currentSession.messages.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('No conversation to share yet. Start chatting with Mam Rose!'),
+          content: Text(
+              'No conversation to share yet. Start chatting with Mam Rose!'),
           backgroundColor: Colors.orange,
         ),
       );
@@ -617,7 +667,8 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Clear Chat'),
-        content: const Text('Are you sure you want to clear all messages? This action cannot be undone.'),
+        content: const Text(
+            'Are you sure you want to clear all messages? This action cannot be undone.'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -708,7 +759,8 @@ class _ChatScreenState extends State<ChatScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: Color(0xFF7553F6), size: 20),
+            icon: const Icon(Icons.arrow_back,
+                color: Color(0xFF7553F6), size: 20),
             onPressed: () => Navigator.pop(context),
           ),
         ),
@@ -916,13 +968,15 @@ class _ChatScreenState extends State<ChatScreen> {
                           child: ListView.builder(
                             controller: _scrollController,
                             padding: const EdgeInsets.all(24),
-                            itemCount: messages.length + (_isRoseThinking ? 1 : 0),
+                            itemCount:
+                                messages.length + (_isRoseThinking ? 1 : 0),
                             itemBuilder: (context, index) {
                               if (index == messages.length && _isRoseThinking) {
                                 return _buildRoseThinkingWidget();
                               }
                               return Container(
-                                constraints: const BoxConstraints(maxWidth: 700),
+                                constraints:
+                                    const BoxConstraints(maxWidth: 700),
                                 child: messages[index],
                               );
                             },

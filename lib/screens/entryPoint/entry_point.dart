@@ -5,12 +5,12 @@ import 'package:provider/provider.dart';
 import 'package:rive/rive.dart';
 import 'package:rive_animation/constants.dart';
 import 'package:rive_animation/screens/home/home_screen.dart';
-import 'package:rive_animation/screens/progress/progress_screen.dart';
-import 'package:rive_animation/screens/auth/profile_screen.dart' as auth_profile;
+import 'package:rive_animation/screens/auth/profile_screen.dart'
+    as auth_profile;
 import 'package:rive_animation/screens/teacher/teacher_classes_screen.dart';
 import 'package:rive_animation/screens/student/student_classes_screen.dart';
-import 'package:rive_animation/screens/teacher/teacher_activity_screen.dart';
-import 'package:rive_animation/screens/student/student_activity_screen.dart';
+import 'package:rive_animation/screens/teacher/teacher_shared_chats_screen.dart';
+import 'package:rive_animation/screens/progress/progress_screen.dart';
 import 'package:rive_animation/services/user_service.dart';
 import 'package:rive_animation/utils/rive_utils.dart';
 import 'package:rive_animation/utils/responsive_utils.dart';
@@ -80,29 +80,29 @@ class _EntryPointState extends State<EntryPoint>
     if (selectedBottonNav == null) {
       return const Center(child: CircularProgressIndicator());
     }
-    
+
     final userService = Provider.of<UserService>(context, listen: false);
     final isTeacher = userService.currentUser?.role == 'teacher';
-    
+
     if (isTeacher) {
       switch (selectedBottonNav!.title) {
         case "Classes":
-          return TeacherClassesScreen();
-        case "Activity":
-          return const TeacherActivityScreen();
+          return const TeacherClassesScreen();
+        case "Shared Chats":
+          return const TeacherSharedChatsScreen();
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:
-          return TeacherClassesScreen();
+          return const TeacherClassesScreen();
       }
     } else {
       switch (selectedBottonNav!.title) {
-        case "Topics":
+        case "Home":
           return const HomePage();
         case "Classes":
           return const StudentClassesScreen();
-        case "Activity":
-          return const StudentActivityScreen();
+        case "Performance":
+          return const ProgressScreen();
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:
@@ -139,7 +139,6 @@ class _EntryPointState extends State<EntryPoint>
   Widget build(BuildContext context) {
     final isDesktop = ResponsiveUtils.isDesktop(context);
     final isWeb = ResponsiveUtils.isWeb(context);
-    final shouldShowPersistentSidebar = ResponsiveUtils.shouldShowPersistentSidebar(context);
 
     if (isDesktop) {
       return _buildDesktopLayout(context);
@@ -380,22 +379,28 @@ class _EntryPointState extends State<EntryPoint>
                       onTap: () => updateSelectedBtmNav(item),
                       borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 20, vertical: 12),
                         decoration: BoxDecoration(
-                          color: isSelected 
-                            ? const Color(0xFF7553F6).withValues(alpha: 0.1)
-                            : Colors.transparent,
+                          color: isSelected
+                              ? const Color(0xFF7553F6).withValues(alpha: 0.1)
+                              : Colors.transparent,
                           borderRadius: BorderRadius.circular(12),
-                          border: isSelected 
-                            ? Border.all(color: const Color(0xFF7553F6).withValues(alpha: 0.3))
-                            : null,
+                          border: isSelected
+                              ? Border.all(
+                                  color: const Color(0xFF7553F6)
+                                      .withValues(alpha: 0.3))
+                              : null,
                         ),
                         child: Text(
                           item.title,
                           style: TextStyle(
                             fontSize: 16,
-                            fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                            color: isSelected ? const Color(0xFF7553F6) : Colors.grey[600],
+                            fontWeight:
+                                isSelected ? FontWeight.w600 : FontWeight.w500,
+                            color: isSelected
+                                ? const Color(0xFF7553F6)
+                                : Colors.grey[600],
                           ),
                         ),
                       ),
@@ -465,14 +470,16 @@ class _EntryPointState extends State<EntryPoint>
 
   Widget _buildResponsiveBottomNav() {
     final isDesktop = ResponsiveUtils.isDesktop(context);
-    
+
     if (isDesktop) return const SizedBox.shrink(); // No bottom nav on desktop
-    
+
     return Transform.translate(
-      offset: Offset(0, ResponsiveUtils.isMobile(context) ? 100 * animation.value : 0),
+      offset: Offset(
+          0, ResponsiveUtils.isMobile(context) ? 100 * animation.value : 0),
       child: SafeArea(
         child: Container(
-          padding: const EdgeInsets.only(left: 12, top: 12, right: 12, bottom: 12),
+          padding:
+              const EdgeInsets.only(left: 12, top: 12, right: 12, bottom: 12),
           margin: EdgeInsets.symmetric(
             horizontal: ResponsiveUtils.getResponsiveValue(
               context,

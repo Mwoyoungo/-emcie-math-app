@@ -1,16 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:rive_animation/services/video_session_service.dart';
+import 'package:rive_animation/model/video_session_model.dart';
 import 'dart:async';
 
 class StudentVideoSessionsScreen extends StatefulWidget {
   const StudentVideoSessionsScreen({super.key});
 
   @override
-  State<StudentVideoSessionsScreen> createState() => _StudentVideoSessionsScreenState();
+  State<StudentVideoSessionsScreen> createState() =>
+      _StudentVideoSessionsScreenState();
 }
 
-class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen> {
+class _StudentVideoSessionsScreenState
+    extends State<StudentVideoSessionsScreen> {
   Timer? _countdownTimer;
 
   @override
@@ -39,8 +42,10 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
   }
 
   Future<void> _loadUpcomingSessions() async {
+    if (!mounted) return;
+    
     try {
-      await context.read<VideoSessionService>().fetchStudentUpcomingSessions();
+      await context.read<VideoSessionService>().getStudentUpcomingSessions();
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -74,7 +79,7 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
             return const Center(child: CircularProgressIndicator());
           }
 
-          final upcomingSessions = videoSessionService.studentUpcomingSessions;
+          final upcomingSessions = videoSessionService.studentSessions;
 
           if (upcomingSessions.isEmpty) {
             return _buildEmptyState();
@@ -160,7 +165,8 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
               const SizedBox(height: 12),
               _buildSessionInfo(session),
               const SizedBox(height: 16),
-              _buildCountdownSection(session, timeUntilStart, isLive, hasStarted, hasEnded),
+              _buildCountdownSection(
+                  session, timeUntilStart, isLive, hasStarted, hasEnded),
               const SizedBox(height: 16),
               _buildActionButton(session, isLive, hasStarted, hasEnded),
             ],
@@ -191,9 +197,9 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              const Text(
                 'Math Session', // We'd need to get this from the video session
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                 ),
@@ -265,7 +271,8 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
         _buildInfoRow(
           Icons.timer,
           'Duration',
-          _formatDuration(session.scheduledEndTime.difference(session.scheduledStartTime)),
+          _formatDuration(
+              session.scheduledEndTime.difference(session.scheduledStartTime)),
         ),
         const SizedBox(height: 8),
         _buildInfoRow(
@@ -474,7 +481,8 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
 
     // Upcoming session
     final timeUntilStart = session.timeUntilStart;
-    final canJoinSoon = timeUntilStart.inMinutes <= 5; // Allow joining 5 minutes before
+    final canJoinSoon =
+        timeUntilStart.inMinutes <= 5; // Allow joining 5 minutes before
 
     return SizedBox(
       width: double.infinity,
@@ -482,9 +490,8 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
       child: ElevatedButton(
         onPressed: canJoinSoon ? () => _joinSession(session) : null,
         style: ElevatedButton.styleFrom(
-          backgroundColor: canJoinSoon 
-              ? const Color(0xFF7553F6) 
-              : Colors.grey[300],
+          backgroundColor:
+              canJoinSoon ? const Color(0xFF7553F6) : Colors.grey[300],
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
@@ -500,7 +507,9 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
     );
   }
 
-  void _joinSession(VideoSessionInstance session) {
+  void _joinSession(VideoSessionInstance session) async {
+    if (!mounted) return;
+    
     // TODO: Navigate to video call screen with Agora
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -508,9 +517,20 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
         backgroundColor: Colors.blue,
       ),
     );
-    
+
     // Record attendance
-    context.read<VideoSessionService>().recordStudentJoin(session.id);
+    try {
+      await context.read<VideoSessionService>().recordStudentJoin(session.id);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error joining session: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   String _formatDateTime(DateTime dateTime) {
@@ -520,7 +540,7 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
   String _formatDuration(Duration duration) {
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
-    
+
     if (hours > 0) {
       return '${hours}h ${minutes}m';
     } else {
@@ -547,7 +567,7 @@ class _StudentVideoSessionsScreenState extends State<StudentVideoSessionsScreen>
 
   String _formatCountdown(Duration duration) {
     if (duration.isNegative) return '00:00:00';
-    
+
     final hours = duration.inHours;
     final minutes = duration.inMinutes % 60;
     final seconds = duration.inSeconds % 60;

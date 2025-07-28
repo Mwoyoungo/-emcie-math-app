@@ -160,6 +160,7 @@ CREATE TABLE IF NOT EXISTS video_sessions (
     recurring_days INTEGER[] NOT NULL CHECK (array_length(recurring_days, 1) > 0), -- [1,2,3,4,5] for Mon-Fri
     agora_channel_name TEXT NOT NULL UNIQUE,
     agora_app_id TEXT,
+    video_link TEXT, -- For external video links (Google Meet, Zoom, etc.)
     is_active BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

@@ -38,7 +38,7 @@ class TopicTile extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.1),
+              color: Colors.black.withValues(alpha: 0.1),
               offset: const Offset(0, 4),
               blurRadius: 8,
             ),
@@ -55,7 +55,7 @@ class TopicTile extends StatelessWidget {
                       width: 40,
                       height: 40,
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.2),
+                        color: Colors.white.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Center(
@@ -107,7 +107,7 @@ class TopicTile extends StatelessWidget {
               description,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 height: 1.3,
               ),
               maxLines: 2,
@@ -196,7 +196,7 @@ class TopicTile extends StatelessWidget {
               "Progress",
               style: TextStyle(
                 fontSize: 10,
-                color: Colors.white.withOpacity(0.8),
+                color: Colors.white.withValues(alpha: 0.8),
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -214,7 +214,7 @@ class TopicTile extends StatelessWidget {
         Container(
           height: 4,
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.3),
+            color: Colors.white.withValues(alpha: 0.3),
             borderRadius: BorderRadius.circular(2),
           ),
           child: FractionallySizedBox(

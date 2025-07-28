@@ -19,10 +19,12 @@ class TopicProgressCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final accuracy = totalQuestions > 0 ? (correctAnswers / totalQuestions * 100).round() : 0;
+    final accuracy = totalQuestions > 0
+        ? (correctAnswers / totalQuestions * 100).round()
+        : 0;
     final incorrectAnswers = totalQuestions - correctAnswers;
     final hasActivity = totalQuestions > 0;
-    
+
     return Container(
       margin: const EdgeInsets.only(left: 20, right: 20, bottom: 16),
       padding: const EdgeInsets.all(20),
@@ -80,6 +82,12 @@ class TopicProgressCard extends StatelessWidget {
                   Row(
                     children: [
                       _buildStatChip(
+                        "$totalQuestions answered",
+                        const Color(0xFF9E9E9E),
+                        Icons.quiz,
+                      ),
+                      const SizedBox(width: 8),
+                      _buildStatChip(
                         "$correctAnswers correct",
                         const Color(0xFF4ECDC4),
                         Icons.check,
@@ -92,9 +100,42 @@ class TopicProgressCard extends StatelessWidget {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: color.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: color.withValues(alpha: 0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(
+                          Icons.percent,
+                          size: 16,
+                          color: color,
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          "$accuracy% Accuracy",
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: color,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ] else ...[
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
                       color: Colors.grey.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
@@ -121,7 +162,9 @@ class TopicProgressCard extends StatelessWidget {
                         ),
                         child: FractionallySizedBox(
                           alignment: Alignment.centerLeft,
-                          widthFactor: hasActivity ? correctAnswers / totalQuestions : 0.0,
+                          widthFactor: hasActivity
+                              ? correctAnswers / totalQuestions
+                              : 0.0,
                           child: Container(
                             decoration: BoxDecoration(
                               color: color,
@@ -133,7 +176,9 @@ class TopicProgressCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 12),
                     Text(
-                      hasActivity ? "$correctAnswers / $totalQuestions" : "0 / 0",
+                      hasActivity
+                          ? "$correctAnswers / $totalQuestions"
+                          : "0 / 0",
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
@@ -153,12 +198,12 @@ class TopicProgressCard extends StatelessWidget {
   Widget _buildPerformanceBadge(int accuracy) {
     Color badgeColor;
     String badgeText;
-    
+
     if (accuracy >= 90) {
       badgeColor = const Color(0xFF4ECDC4);
       badgeText = "🏆 Gold";
     } else if (accuracy >= 75) {
-      badgeColor = const Color(0xFF80A4FF);  
+      badgeColor = const Color(0xFF80A4FF);
       badgeText = "🥈 Silver";
     } else if (accuracy >= 60) {
       badgeColor = const Color(0xFFFF6B6B);
@@ -167,7 +212,7 @@ class TopicProgressCard extends StatelessWidget {
       badgeColor = Colors.grey;
       badgeText = "📚 Practice";
     }
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(

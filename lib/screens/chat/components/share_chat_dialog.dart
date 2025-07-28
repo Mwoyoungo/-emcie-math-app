@@ -35,7 +35,8 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
 
   Future<void> _loadClasses() async {
     try {
-      final classes = await context.read<ChatSharingService>().getStudentClasses();
+      final classes =
+          await context.read<ChatSharingService>().getStudentClasses();
       setState(() {
         _classes = classes;
         _isLoadingClasses = false;
@@ -59,11 +60,11 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Row(
+      title: const Row(
         children: [
-          const Icon(Icons.share, color: Color(0xFF7553F6)),
-          const SizedBox(width: 8),
-          const Text('Share Chat with Teacher'),
+          Icon(Icons.share, color: Color(0xFF7553F6)),
+          SizedBox(width: 8),
+          Text('Share Chat with Teacher'),
         ],
       ),
       content: SizedBox(
@@ -77,7 +78,7 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
               style: TextStyle(color: Colors.grey[600]),
             ),
             const SizedBox(height: 20),
-            
+
             // Class Selection
             if (_isLoadingClasses)
               const Center(child: CircularProgressIndicator())
@@ -87,7 +88,8 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
                 decoration: BoxDecoration(
                   color: Colors.orange.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.orange.withValues(alpha: 0.3)),
+                  border:
+                      Border.all(color: Colors.orange.withValues(alpha: 0.3)),
                 ),
                 child: const Row(
                   children: [
@@ -130,7 +132,8 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
                           children: [
                             Text(
                               classData['class_name'] ?? 'Unknown Class',
-                              style: const TextStyle(fontWeight: FontWeight.w500),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.w500),
                             ),
                             Text(
                               'Teacher: ${classData['teacher_name'] ?? 'Unknown'}',
@@ -147,7 +150,7 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
                 ),
               ),
               const SizedBox(height: 16),
-              
+
               // Chat Summary
               Container(
                 padding: const EdgeInsets.all(12),
@@ -192,8 +195,8 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-          onPressed: (_isLoading || _classes.isEmpty || _selectedClass == null) 
-              ? null 
+          onPressed: (_isLoading || _classes.isEmpty || _selectedClass == null)
+              ? null
               : _shareChat,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF7553F6),
@@ -221,11 +224,11 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
 
     try {
       final success = await context.read<ChatSharingService>().shareChat(
-        classId: _selectedClass!['class_id'],
-        chatSession: widget.chatSession,
-      );
+            classId: _selectedClass!['class_id'],
+            chatSession: widget.chatSession,
+          );
 
-      if (success) {
+      if (success && mounted) {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -240,13 +243,15 @@ class _ShareChatDialogState extends State<ShareChatDialog> {
         throw Exception('Failed to share chat');
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Error sharing chat: $e'),
           backgroundColor: Colors.red,
           duration: const Duration(seconds: 3),
         ),
       );
+      }
     } finally {
       if (mounted) {
         setState(() => _isLoading = false);
