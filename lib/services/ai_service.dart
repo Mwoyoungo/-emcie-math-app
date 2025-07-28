@@ -1,5 +1,86 @@
 import 'dart:convert';
+import 'dart:io';
+import 'dart:typed_data';
 import 'package:http/http.dart' as http;
+import 'package:image_picker/image_picker.dart';
+
+class ImageUpload {
+  final String data;
+  final String type;
+  final String name;
+  final String mime;
+
+  ImageUpload({
+    required this.data,
+    required this.type,
+    required this.name,
+    required this.mime,
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'data': data,
+      'type': type,
+      'name': name,
+      'mime': mime,
+    };
+  }
+
+  static ImageUpload fromFile(File file, String fileName) {
+    final bytes = file.readAsBytesSync();
+    final base64String = base64Encode(bytes);
+    final mimeType = _getMimeType(fileName);
+    
+    return ImageUpload(
+      data: 'data:$mimeType;base64,$base64String',
+      type: 'file',
+      name: fileName,
+      mime: mimeType,
+    );
+  }
+
+  static Future<ImageUpload> fromXFile(XFile xFile, String fileName) async {
+    final bytes = await xFile.readAsBytes();
+    final base64String = base64Encode(bytes);
+    final mimeType = _getMimeType(fileName);
+    
+    return ImageUpload(
+      data: 'data:$mimeType;base64,$base64String',
+      type: 'file',
+      name: fileName,
+      mime: mimeType,
+    );
+  }
+
+  static ImageUpload fromBytes(Uint8List bytes, String fileName) {
+    final base64String = base64Encode(bytes);
+    final mimeType = _getMimeType(fileName);
+    
+    return ImageUpload(
+      data: 'data:$mimeType;base64,$base64String',
+      type: 'file',
+      name: fileName,
+      mime: mimeType,
+    );
+  }
+
+  static String _getMimeType(String fileName) {
+    final extension = fileName.toLowerCase().split('.').last;
+    switch (extension) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'gif':
+        return 'image/gif';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'image/png';
+    }
+  }
+}
 
 class AIResponse {
   final String text;
@@ -33,8 +114,13 @@ class AIResponse {
 class AIService {
   static const String _baseUrl = 'https://cloud.flowiseai.com/api/v1/prediction/e07906e0-cbb2-47a9-afc9-cebc4a830321';
   
-  static Future<AIResponse> getAssessmentResponse(String message, {String? chatId}) async {
+  static Future<AIResponse> getAssessmentResponse(
+    String message, {
+    String? chatId,
+    List<ImageUpload>? images,
+  }) async {
     try {
+      // Match the exact format from the JavaScript example
       final requestBody = <String, dynamic>{
         'question': message,
       };
@@ -44,12 +130,27 @@ class AIService {
         requestBody['chatId'] = chatId;
       }
 
+      // Include images if provided - match Flowise expected format
+      if (images != null && images.isNotEmpty) {
+        requestBody['uploads'] = images.map((image) => {
+          'data': image.data,
+          'type': image.type,
+          'name': image.name,
+          'mime': image.mime,
+        }).toList();
+      }
+
       final response = await http.post(
         Uri.parse(_baseUrl),
         headers: {
           'Content-Type': 'application/json',
         },
         body: jsonEncode(requestBody),
+      ).timeout(
+        const Duration(seconds: 30),
+        onTimeout: () {
+          throw Exception('Request timeout - Flowise took too long to respond');
+        },
       );
 
       if (response.statusCode == 200) {
@@ -71,13 +172,20 @@ class AIService {
           throw Exception('Unexpected response format');
         }
       } else {
-        throw Exception('Failed to get AI response: ${response.statusCode}');
+        throw Exception('Failed to get AI response: ${response.statusCode} - ${response.body}');
       }
     } catch (e) {
-      // AI Service Error: $e
-      // Return fallback response with generated IDs
+      
+      // Provide more specific error messages for image uploads
+      String errorMessage;
+      if (images != null && images.isNotEmpty) {
+        errorMessage = "I'm having trouble analyzing the image right now. Please try again or send your question as text.";
+      } else {
+        errorMessage = _getFallbackResponse(message);
+      }
+      
       return AIResponse(
-        text: _getFallbackResponse(message),
+        text: errorMessage,
         question: message,
         chatId: chatId ?? _generateFallbackChatId(),
         chatMessageId: _generateRandomId(),

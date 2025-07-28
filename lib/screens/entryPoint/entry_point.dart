@@ -154,22 +154,22 @@ class _EntryPointState extends State<EntryPoint>
       backgroundColor: backgroundColor2,
       body: Row(
         children: [
-          // Persistent sidebar for desktop
-          Container(
-            width: 280,
-            height: double.infinity,
-            decoration: BoxDecoration(
-              color: const Color(0xFF17203A),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.1),
-                  offset: const Offset(2, 0),
-                  blurRadius: 8,
-                ),
-              ],
-            ),
-            child: const SideBar(),
-          ),
+          // Persistent sidebar for desktop - HIDDEN
+          // Container(
+          //   width: 280,
+          //   height: double.infinity,
+          //   decoration: BoxDecoration(
+          //     color: const Color(0xFF17203A),
+          //     boxShadow: [
+          //       BoxShadow(
+          //         color: Colors.black.withValues(alpha: 0.1),
+          //         offset: const Offset(2, 0),
+          //         blurRadius: 8,
+          //       ),
+          //     ],
+          //   ),
+          //   child: const SideBar(),
+          // ),
           // Main content area
           Expanded(
             child: Column(
@@ -210,26 +210,26 @@ class _EntryPointState extends State<EntryPoint>
       backgroundColor: backgroundColor2,
       body: Row(
         children: [
-          // Collapsible sidebar for tablet
-          AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            width: isSideBarOpen ? 280 : 0,
-            child: isSideBarOpen
-                ? Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF17203A),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.1),
-                          offset: const Offset(2, 0),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: const SideBar(),
-                  )
-                : null,
-          ),
+          // Collapsible sidebar for tablet - HIDDEN
+          // AnimatedContainer(
+          //   duration: const Duration(milliseconds: 200),
+          //   width: isSideBarOpen ? 280 : 0,
+          //   child: isSideBarOpen
+          //       ? Container(
+          //           decoration: BoxDecoration(
+          //             color: const Color(0xFF17203A),
+          //             boxShadow: [
+          //               BoxShadow(
+          //                 color: Colors.black.withValues(alpha: 0.1),
+          //                 offset: const Offset(2, 0),
+          //                 blurRadius: 8,
+          //               ),
+          //             ],
+          //           ),
+          //           child: const SideBar(),
+          //         )
+          //       : null,
+          // ),
           // Main content
           Expanded(
             child: Column(
@@ -272,67 +272,57 @@ class _EntryPointState extends State<EntryPoint>
       backgroundColor: backgroundColor2,
       body: Stack(
         children: [
-          AnimatedPositioned(
-            width: 288,
-            height: MediaQuery.of(context).size.height,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.fastOutSlowIn,
-            left: isSideBarOpen ? 0 : -288,
-            top: 0,
-            child: const SideBar(),
-          ),
-          Transform(
-            alignment: Alignment.center,
-            transform: Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(
-                  1 * animation.value - 30 * (animation.value) * pi / 180),
-            child: Transform.translate(
-              offset: Offset(animation.value * 265, 0),
-              child: Transform.scale(
-                scale: scalAnimation.value,
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(
-                    Radius.circular(24),
-                  ),
-                  child: _getCurrentScreen(),
-                ),
-              ),
+          // Sidebar - HIDDEN
+          // AnimatedPositioned(
+          //   width: 288,
+          //   height: MediaQuery.of(context).size.height,
+          //   duration: const Duration(milliseconds: 200),
+          //   curve: Curves.fastOutSlowIn,
+          //   left: isSideBarOpen ? 0 : -288,
+          //   top: 0,
+          //   child: const SideBar(),
+          // ),
+          // No transform animation needed without sidebar
+          ClipRRect(
+            borderRadius: const BorderRadius.all(
+              Radius.circular(24),
             ),
+            child: _getCurrentScreen(),
           ),
-          AnimatedPositioned(
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.fastOutSlowIn,
-            left: isSideBarOpen ? 220 : 0,
-            top: 16,
-            child: MenuBtn(
-              press: () {
-                isMenuOpenInput.value = !isMenuOpenInput.value;
-
-                if (_animationController.value == 0) {
-                  _animationController.forward();
-                } else {
-                  _animationController.reverse();
-                }
-
-                setState(
-                  () {
-                    isSideBarOpen = !isSideBarOpen;
-                  },
-                );
-              },
-              riveOnInit: (artboard) {
-                final controller = StateMachineController.fromArtboard(
-                    artboard, "State Machine");
-
-                artboard.addController(controller!);
-
-                isMenuOpenInput =
-                    controller.findInput<bool>("isOpen") as SMIBool;
-                isMenuOpenInput.value = true;
-              },
-            ),
-          ),
+          // Menu button - HIDDEN
+          // AnimatedPositioned(
+          //   duration: const Duration(milliseconds: 200),
+          //   curve: Curves.fastOutSlowIn,
+          //   left: isSideBarOpen ? 220 : 0,
+          //   top: 16,
+          //   child: MenuBtn(
+          //     press: () {
+          //       isMenuOpenInput.value = !isMenuOpenInput.value;
+          //
+          //       if (_animationController.value == 0) {
+          //         _animationController.forward();
+          //       } else {
+          //         _animationController.reverse();
+          //       }
+          //
+          //       setState(
+          //         () {
+          //           isSideBarOpen = !isSideBarOpen;
+          //         },
+          //       );
+          //     },
+          //     riveOnInit: (artboard) {
+          //       final controller = StateMachineController.fromArtboard(
+          //           artboard, "State Machine");
+          //
+          //       artboard.addController(controller!);
+          //
+          //       isMenuOpenInput =
+          //           controller.findInput<bool>("isOpen") as SMIBool;
+          //       isMenuOpenInput.value = true;
+          //     },
+          //   ),
+          // ),
         ],
       ),
       bottomNavigationBar: _buildResponsiveBottomNav(),
@@ -431,18 +421,18 @@ class _EntryPointState extends State<EntryPoint>
       ),
       child: Row(
         children: [
-          // Menu button for tablet
-          IconButton(
-            onPressed: () {
-              setState(() {
-                isSideBarOpen = !isSideBarOpen;
-              });
-            },
-            icon: Icon(
-              isSideBarOpen ? Icons.close : Icons.menu,
-              color: const Color(0xFF7553F6),
-            ),
-          ),
+          // Menu button for tablet - HIDDEN
+          // IconButton(
+          //   onPressed: () {
+          //     setState(() {
+          //       isSideBarOpen = !isSideBarOpen;
+          //     });
+          //   },
+          //   icon: Icon(
+          //     isSideBarOpen ? Icons.close : Icons.menu,
+          //     color: const Color(0xFF7553F6),
+          //   ),
+          // ),
           const SizedBox(width: 12),
           const Text(
             "Emcie",

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'dart:io';
 
@@ -160,17 +161,9 @@ class ChatMessage extends StatelessWidget {
                                 ),
                               ],
                             ),
-                          if (imagePath != null) ...[
+                          if (imagePath != null && imagePath!.isNotEmpty) ...[
                             const SizedBox(height: 8),
-                            ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.file(
-                                File(imagePath!),
-                                height: 200,
-                                width: double.infinity,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
+                            _buildImageWidget(),
                             const SizedBox(height: 8),
                           ],
                           if (hasLatex && !isUser)
@@ -184,6 +177,54 @@ class ChatMessage extends StatelessWidget {
                                 height: 1.3,
                               ),
                             ),
+                          // Copy button for AI responses
+                          if (!isUser) ...[
+                            const SizedBox(height: 8),
+                            Align(
+                              alignment: Alignment.bottomRight,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 6, vertical: 2),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey[100],
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    child: Text(
+                                      "${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}",
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.grey[600],
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  GestureDetector(
+                                    onTap: () => _copyToClipboard(context),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF7553F6).withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                        border: Border.all(
+                                          color: const Color(0xFF7553F6).withValues(alpha: 0.3),
+                                          width: 1,
+                                        ),
+                                      ),
+                                      child: const Icon(
+                                        Icons.copy,
+                                        size: 14,
+                                        color: Color(0xFF7553F6),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                           if (isUser) ...[
                             const SizedBox(height: 6),
                             Align(
@@ -390,5 +431,87 @@ class ChatMessage extends StatelessWidget {
     processed = processed.replaceAll('∫', '\\int');
 
     return processed;
+  }
+
+  Widget _buildImageWidget() {
+    if (imagePath == null || imagePath!.isEmpty) {
+      return const SizedBox.shrink();
+    }
+
+    try {
+      final file = File(imagePath!);
+      
+      // Check if file exists before trying to display
+      if (!file.existsSync()) {
+        return _buildImageErrorWidget('Image file not found');
+      }
+
+      return ClipRRect(
+        borderRadius: BorderRadius.circular(8),
+        child: Image.file(
+          file,
+          height: 200,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildImageErrorWidget('Failed to load image');
+          },
+        ),
+      );
+    } catch (e) {
+      return _buildImageErrorWidget('Error displaying image');
+    }
+  }
+
+  Widget _buildImageErrorWidget(String message) {
+    return Container(
+      height: 120,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: Colors.grey[100],
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.grey[300]!),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.broken_image,
+            size: 48,
+            color: Colors.grey[400],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            message,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey[600],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _copyToClipboard(BuildContext context) {
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, color: Colors.white, size: 16),
+            SizedBox(width: 8),
+            Text('Response copied to clipboard!'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF7553F6),
+        duration: const Duration(seconds: 2),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+    );
   }
 }

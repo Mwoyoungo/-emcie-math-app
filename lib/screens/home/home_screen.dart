@@ -7,6 +7,7 @@ import '../../services/performance_service.dart';
 import '../../services/user_service.dart';
 import 'components/topic_tile.dart';
 import 'components/secondary_course_card.dart';
+import '../test/image_upload_test_screen.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -91,6 +92,18 @@ class HomePage extends StatelessWidget {
                 ],
               ),
             ),
+          ),
+          floatingActionButton: FloatingActionButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ImageUploadTestScreen(),
+                ),
+              );
+            },
+            backgroundColor: const Color(0xFF7553F6),
+            child: const Icon(Icons.image, color: Colors.white),
           ),
         );
       },

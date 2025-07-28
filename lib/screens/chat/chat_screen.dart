@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
@@ -30,8 +31,10 @@ class _ChatScreenState extends State<ChatScreen> {
   List<ChatMessage> messages = [];
   bool _isInitialized = false;
   bool _isRoseThinking = false;
+  bool _isLoading = false;
   int _consecutiveWrongAnswers = 0;
   int _totalQuestionsAsked = 0;
+  String currentSessionId = '';
 
   @override
   void initState() {
@@ -254,68 +257,108 @@ class _ChatScreenState extends State<ChatScreen> {
   // Keep the old static questions as fallback only
 
   void _pickImage() async {
-    final XFile? image =
-        await _imagePicker.pickImage(source: ImageSource.gallery);
+    final XFile? image = await _imagePicker.pickImage(source: ImageSource.gallery);
     if (image != null && mounted) {
-      final chatSessionService =
-          Provider.of<ChatSessionService>(context, listen: false);
-
-      final imageMessage = ChatMessage(
-        text:
-            "I've received your image! Let me analyze this math problem for you...",
-        isUser: false,
-        imagePath: image.path,
-        timestamp: DateTime.now(),
-      );
-
-      setState(() {
-        messages.add(imageMessage);
-      });
-
-      await chatSessionService.addMessage(imageMessage);
-      _scrollToBottom();
-
-      // Simulate analysis
-      Future.delayed(const Duration(seconds: 2), () async {
-        if (mounted) {
-          final analysisMessage = ChatMessage(
-            text:
-                "I can see you've shared a problem! Based on what I can observe, let me help you work through this step by step. Could you also type out the specific question so I can provide the most accurate guidance?",
-            isUser: false,
-            timestamp: DateTime.now(),
-          );
-
-          setState(() {
-            messages.add(analysisMessage);
-          });
-
-          await chatSessionService.addMessage(analysisMessage);
-          _scrollToBottom();
-        }
-      });
+      await _processSelectedImage(image, "Let me check your answer from the image...");
     }
   }
 
   void _takePhoto() async {
-    final XFile? image =
-        await _imagePicker.pickImage(source: ImageSource.camera);
+    final XFile? image = await _imagePicker.pickImage(source: ImageSource.camera);
     if (image != null && mounted) {
-      final chatSessionService =
-          Provider.of<ChatSessionService>(context, listen: false);
+      await _processSelectedImage(image, "Let me check your answer from the photo...");
+    }
+  }
 
-      final photoMessage = ChatMessage(
-        text: "Perfect! I can see your math problem.",
-        isUser: false,
-        imagePath: image.path,
-        timestamp: DateTime.now(),
+  Future<void> _processSelectedImage(XFile image, String loadingMessage) async {
+    final chatSessionService = Provider.of<ChatSessionService>(context, listen: false);
+
+    // Show the image in chat as user message
+    final userImageMessage = ChatMessage(
+      text: "📸 [Image uploaded]",
+      isUser: true,
+      imagePath: image.path,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      messages.add(userImageMessage);
+    });
+    await chatSessionService.addMessage(userImageMessage);
+
+    // Show loading message
+    final loadingMsg = ChatMessage(
+      text: loadingMessage,
+      isUser: false,
+      timestamp: DateTime.now(),
+    );
+
+    setState(() {
+      messages.add(loadingMsg);
+      _isLoading = true;
+    });
+    await chatSessionService.addMessage(loadingMsg);
+    _scrollToBottom();
+
+    try {
+      // Convert image to base64 and send to AI
+      final fileName = image.name;
+      
+      // Use XFile directly for web compatibility
+      final imageUpload = await ImageUpload.fromXFile(image, fileName);
+
+      // Send to AI with image
+      final response = await AIService.getAssessmentResponse(
+        "Here is my answer in this image.",
+        chatId: currentSessionId,
+        images: [imageUpload],
       );
 
-      setState(() {
-        messages.add(photoMessage);
-      });
+      if (mounted) {
+        // Update session ID if we got a new one
+        if (response.sessionId.isNotEmpty) {
+          currentSessionId = response.sessionId;
+        }
 
-      await chatSessionService.addMessage(photoMessage);
-      _scrollToBottom();
+        // Remove loading message and add AI response
+        setState(() {
+          messages.removeLast(); // Remove loading message
+          _isLoading = false;
+        });
+
+        final aiMessage = ChatMessage(
+          text: response.text,
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+
+        setState(() {
+          messages.add(aiMessage);
+        });
+
+        await chatSessionService.addMessage(aiMessage);
+        _scrollToBottom();
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          messages.removeLast(); // Remove loading message
+          _isLoading = false;
+        });
+
+        final errorMessage = ChatMessage(
+          text: "I'm having trouble analyzing the image right now. Could you try uploading it again or type out the problem?",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+
+        setState(() {
+          messages.add(errorMessage);
+        });
+
+        await chatSessionService.addMessage(errorMessage);
+        _scrollToBottom();
+      }
     }
   }
 
