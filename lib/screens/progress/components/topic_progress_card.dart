@@ -74,115 +74,133 @@ class TopicProgressCard extends StatelessWidget {
                         ),
                       ),
                     ),
-                    if (hasActivity) _buildPerformanceBadge(accuracy),
+                    if (hasActivity)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getBadgeColor(accuracy).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _getBadgeColor(accuracy).withValues(alpha: 0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: Text(
+                          _getBadgeText(accuracy),
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w600,
+                            color: _getBadgeColor(accuracy),
+                          ),
+                        ),
+                      ),
                   ],
                 ),
                 const SizedBox(height: 8),
                 if (hasActivity) ...[
                   Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      _buildStatChip(
-                        "$totalQuestions answered",
-                        const Color(0xFF9E9E9E),
-                        Icons.quiz,
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF4ECDC4).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "✓ $correctAnswers Correct",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF4ECDC4),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFF6B6B).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Text(
+                              "✗ $incorrectAnswers Wrong",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFFF6B6B),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 8),
-                      _buildStatChip(
-                        "$correctAnswers correct",
-                        const Color(0xFF4ECDC4),
-                        Icons.check,
-                      ),
-                      const SizedBox(width: 8),
-                      _buildStatChip(
-                        "$incorrectAnswers wrong",
-                        const Color(0xFFFF6B6B),
-                        Icons.close,
+                      Text(
+                        "$accuracy%",
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: color,
+                        ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: color.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: color.withValues(alpha: 0.3),
-                        width: 1,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.percent,
-                          size: 16,
-                          color: color,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          "$accuracy% Accuracy",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
                 ] else ...[
-                  Container(
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      "Start practicing to see your progress!",
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                        fontStyle: FontStyle.italic,
-                      ),
+                  Text(
+                    "Start practicing to see your progress!",
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontStyle: FontStyle.italic,
                     ),
                   ),
                 ],
                 const SizedBox(height: 12),
-                Row(
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Expanded(
-                      child: Container(
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(4),
-                        ),
-                        child: FractionallySizedBox(
-                          alignment: Alignment.centerLeft,
-                          widthFactor: hasActivity
-                              ? correctAnswers / totalQuestions
-                              : 0.0,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: color,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          "Progress",
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey[600],
+                            fontWeight: FontWeight.w500,
                           ),
                         ),
-                      ),
+                        Text(
+                          hasActivity
+                              ? "$correctAnswers / $totalQuestions"
+                              : "0 / 0",
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 12),
-                    Text(
-                      hasActivity
-                          ? "$correctAnswers / $totalQuestions"
-                          : "0 / 0",
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w500,
-                        color: Colors.grey[600],
+                    const SizedBox(height: 6),
+                    Container(
+                      height: 6,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[200],
+                        borderRadius: BorderRadius.circular(3),
+                      ),
+                      child: FractionallySizedBox(
+                        alignment: Alignment.centerLeft,
+                        widthFactor: hasActivity
+                            ? correctAnswers / totalQuestions
+                            : 0.0,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(3),
+                          ),
+                        ),
                       ),
                     ),
                   ],
@@ -195,43 +213,18 @@ class TopicProgressCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPerformanceBadge(int accuracy) {
-    Color badgeColor;
-    String badgeText;
+  Color _getBadgeColor(int accuracy) {
+    if (accuracy >= 90) return const Color(0xFF4ECDC4);
+    if (accuracy >= 75) return const Color(0xFF80A4FF);
+    if (accuracy >= 60) return const Color(0xFFFFB74D);
+    return Colors.grey;
+  }
 
-    if (accuracy >= 90) {
-      badgeColor = const Color(0xFF4ECDC4);
-      badgeText = "🏆 Gold";
-    } else if (accuracy >= 75) {
-      badgeColor = const Color(0xFF80A4FF);
-      badgeText = "🥈 Silver";
-    } else if (accuracy >= 60) {
-      badgeColor = const Color(0xFFFF6B6B);
-      badgeText = "🥉 Bronze";
-    } else {
-      badgeColor = Colors.grey;
-      badgeText = "📚 Practice";
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: badgeColor.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-          color: badgeColor.withValues(alpha: 0.3),
-          width: 1,
-        ),
-      ),
-      child: Text(
-        badgeText,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-          color: badgeColor,
-        ),
-      ),
-    );
+  String _getBadgeText(int accuracy) {
+    if (accuracy >= 90) return "🏆 Excellent";
+    if (accuracy >= 75) return "🥈 Good";
+    if (accuracy >= 60) return "🥉 Fair";
+    return "📚 Practice";
   }
 
   Widget _buildStatChip(String text, Color color, IconData icon) {

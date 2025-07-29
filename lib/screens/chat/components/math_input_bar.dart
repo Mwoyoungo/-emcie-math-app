@@ -114,26 +114,23 @@ class _MathInputBarState extends State<MathInputBar> {
           if (_showMathSymbols) _buildMathSymbolsPanel(),
           Row(
             children: [
-              IconButton(
-                onPressed: () {
-                  _showImageOptions();
-                },
-                icon: const Icon(Icons.camera_alt),
-                color: const Color(0xFF7553F6),
-              ),
-              IconButton(
-                onPressed: () {
-                  setState(() {
-                    _showMathSymbols = !_showMathSymbols;
-                  });
-                },
-                icon: Icon(_showMathSymbols ? Icons.keyboard : Icons.functions),
-                color: const Color(0xFF7553F6),
+              Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () {
+                    _showImageOptions();
+                  },
+                  icon: const Icon(Icons.camera_alt, size: 18),
+                  color: const Color(0xFF7553F6),
+                  padding: EdgeInsets.zero,
+                ),
               ),
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   decoration: BoxDecoration(
                     color: const Color(0xFFEEF1F8),
                     borderRadius: BorderRadius.circular(24),
@@ -147,8 +144,9 @@ class _MathInputBarState extends State<MathInputBar> {
                     decoration: const InputDecoration(
                       hintText: "Ask Mam Rose a math question...",
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.zero,
+                      contentPadding: EdgeInsets.symmetric(vertical: 4),
                     ),
+                    style: const TextStyle(fontSize: 16),
                     maxLines: null,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (text) {

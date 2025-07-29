@@ -74,14 +74,24 @@ class HomePage extends StatelessWidget {
                               topicPerformance.accuracyPercentage);
                         }
 
-                        return TopicTile(
-                          title: course.title,
-                          description: course.description,
-                          color: course.color,
-                          iconSrc: course.iconSrc,
-                          progress: progress,
-                          badge: badge,
-                          hasActiveSession: hasActiveSession,
+                        return FutureBuilder<int>(
+                          future: performanceService.getQuestionsAsked(course.title),
+                          builder: (context, questionsSnapshot) {
+                            final questionsAsked = questionsSnapshot.data ?? 0;
+                            
+                            return TopicTile(
+                              title: course.title,
+                              description: course.description,
+                              color: course.color,
+                              iconSrc: course.iconSrc,
+                              progress: progress,
+                              badge: badge,
+                              hasActiveSession: hasActiveSession,
+                              questionsAsked: questionsAsked,
+                              correctAnswers: topicPerformance?.correctAnswers ?? 0,
+                              wrongAnswers: topicPerformance?.wrongAnswers ?? 0,
+                            );
+                          },
                         );
                       },
                     ),

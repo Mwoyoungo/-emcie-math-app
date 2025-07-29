@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
+import '../../../services/class_service.dart';
+import '../../../services/user_service.dart';
 
 enum TutorTriggerType {
   wrongAnswers,
@@ -161,6 +165,172 @@ class _TutorPopupState extends State<TutorPopup>
     }
   }
 
+  bool _isStudentInAnyClass(BuildContext context) {
+    final classService = Provider.of<ClassService>(context, listen: false);
+    return classService.studentClasses.isNotEmpty;
+  }
+
+  Future<void> _handleWhatsAppCall(BuildContext context, TutorSessionType sessionType) async {
+    try {
+      final userService = Provider.of<UserService>(context, listen: false);
+      final classService = Provider.of<ClassService>(context, listen: false);
+      
+      if (userService.currentUser == null) {
+        _showErrorMessage(context, 'Please log in to make calls');
+        return;
+      }
+
+      if (classService.studentClasses.isEmpty) {
+        _showErrorMessage(context, 'Please join a class first');
+        return;
+      }
+
+      // Get the first enrolled class (you might want to let user choose)
+      final firstClass = classService.studentClasses.first;
+      final studentName = userService.currentUser!.fullName;
+
+      // Check if class has WhatsApp call link
+      if (firstClass.whatsappCallLink == null || firstClass.whatsappCallLink!.isEmpty) {
+        _showErrorMessage(context, 'No WhatsApp call link available for this class');
+        return;
+      }
+
+      // Show loading
+      _showLoadingDialog(context);
+
+      // Use the WhatsApp call link directly (no message parameters needed)
+      final uri = Uri.parse(firstClass.whatsappCallLink!);
+      
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+        // Hide loading
+        Navigator.of(context).pop();
+        // Close the popup after successful launch
+        Navigator.of(context).pop();
+      } else {
+        // Hide loading
+        Navigator.of(context).pop();
+        _showErrorMessage(context, 'Could not open WhatsApp call. Please check if WhatsApp is installed.');
+      }
+
+    } catch (e) {
+      // Hide loading if showing
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop();
+      }
+      
+      _showErrorMessage(context, 'Failed to open WhatsApp: ${e.toString()}');
+    }
+  }
+
+  void _showLoadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const AlertDialog(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            CircularProgressIndicator(),
+            SizedBox(height: 16),
+            Text('Opening WhatsApp...'),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showErrorMessage(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error, color: Colors.white),
+            const SizedBox(width: 8),
+            Expanded(child: Text(message)),
+          ],
+        ),
+        backgroundColor: Colors.red,
+        duration: const Duration(seconds: 3),
+      ),
+    );
+  }
+
+  Widget _buildNoClassMessage() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.orange.withValues(alpha: 0.1),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(
+            Icons.school_outlined,
+            size: 48,
+            color: Colors.orange,
+          ),
+        ),
+        const SizedBox(height: 20),
+        const Text(
+          'Join a Class First! 📚',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF7553F6),
+            fontFamily: "Poppins",
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'To call your teacher, you need to join a class first. Once you\'re enrolled in a class, you can video call your teacher directly!',
+          style: TextStyle(
+            fontSize: 14,
+            color: Colors.grey[600],
+            height: 1.4,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF7553F6),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            child: const Text(
+              'Find Classes to Join',
+              style: TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCallOptions() {
+    return Column(
+      children: [
+        const SizedBox(height: 16),
+        _buildWhatsAppCallOption(
+          title: "Join Teacher Call",
+          subtitle: "Connect via WhatsApp",
+          price: "Free",
+          color: const Color(0xFF25D366), // WhatsApp green
+          icon: Icons.video_call,
+          sessionType: TutorSessionType.quickHelp,
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Dialog(
@@ -218,32 +388,36 @@ class _TutorPopupState extends State<TutorPopup>
                     ),
                     const SizedBox(height: 24),
                     
-                    // Session Options
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _buildSessionOption(
-                            title: "Quick Help",
-                            subtitle: "5-10 minutes",
-                            price: "\$8",
-                            color: const Color(0xFF4ECDC4),
-                            icon: Icons.flash_on,
-                            sessionType: TutorSessionType.quickHelp,
+                    // Conditional content based on trigger type and class enrollment
+                    widget.triggerType == TutorTriggerType.callButton
+                        ? _isStudentInAnyClass(context)
+                            ? _buildCallOptions()
+                            : _buildNoClassMessage()
+                        : Row(
+                            children: [
+                              Expanded(
+                                child: _buildSessionOption(
+                                  title: "Quick Help",
+                                  subtitle: "5-10 minutes",
+                                  price: "\$8",
+                                  color: const Color(0xFF4ECDC4),
+                                  icon: Icons.flash_on,
+                                  sessionType: TutorSessionType.quickHelp,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildSessionOption(
+                                  title: "Deep Session",
+                                  subtitle: "30-60 minutes",
+                                  price: "\$25-50",
+                                  color: const Color(0xFF7553F6),
+                                  icon: Icons.psychology,
+                                  sessionType: TutorSessionType.deepSession,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _buildSessionOption(
-                            title: "Deep Session",
-                            subtitle: "30-60 minutes",
-                            price: "\$25-50",
-                            color: const Color(0xFF7553F6),
-                            icon: Icons.psychology,
-                            sessionType: TutorSessionType.deepSession,
-                          ),
-                        ),
-                      ],
-                    ),
                     const SizedBox(height: 16),
                     
                     // Close button
@@ -319,6 +493,85 @@ class _TutorPopupState extends State<TutorPopup>
                 fontSize: 12,
                 color: Colors.grey[600],
               ),
+            ),
+            const SizedBox(height: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                price,
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWhatsAppCallOption({
+    required String title,
+    required String subtitle,
+    required String price,
+    required Color color,
+    required IconData icon,
+    required TutorSessionType sessionType,
+  }) {
+    return InkWell(
+      onTap: () async {
+        await _handleWhatsAppCall(context, sessionType);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: color.withValues(alpha: 0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 24,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: color,
+                fontFamily: "Poppins",
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
+              ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Container(

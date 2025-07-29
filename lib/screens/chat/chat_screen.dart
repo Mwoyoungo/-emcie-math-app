@@ -227,9 +227,13 @@ class _ChatScreenState extends State<ChatScreen> {
         await chatSessionService.addMessage(aiMessage,
             executionId: aiResponse.executionId, aiChatId: aiResponse.chatId);
 
-        // Track performance if AI response contains correctness feedback
-        _trackPerformanceIfApplicable(
-            text, aiResponse.text, aiResponse.executionId, performanceService);
+        // Track all AI messages and performance
+        performanceService.recordAIMessage(
+          topicTitle: widget.topicTitle,
+          aiResponse: aiResponse.text,
+          executionId: aiResponse.executionId,
+          userAnswer: text,
+        );
 
         _scrollToBottom();
       }

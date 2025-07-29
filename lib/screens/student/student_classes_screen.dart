@@ -35,6 +35,7 @@ class _StudentClassesScreenState extends State<StudentClassesScreen> {
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: const Text(
           'My Classes',
           style: TextStyle(

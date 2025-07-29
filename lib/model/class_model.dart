@@ -11,6 +11,7 @@ class ClassModel {
   final DateTime updatedAt;
   final int? enrolledStudentsCount;
   final String? teacherName;
+  final String? whatsappCallLink;
 
   ClassModel({
     required this.id,
@@ -25,6 +26,7 @@ class ClassModel {
     required this.updatedAt,
     this.enrolledStudentsCount,
     this.teacherName,
+    this.whatsappCallLink,
   });
 
   factory ClassModel.fromJson(Map<String, dynamic> json) {
@@ -41,6 +43,7 @@ class ClassModel {
       updatedAt: DateTime.parse(json['updated_at'] as String),
       enrolledStudentsCount: json['enrolled_students_count'] as int?,
       teacherName: json['teacher_name'] as String?,
+      whatsappCallLink: json['whatsapp_call_link'] as String?,
     );
   }
 
@@ -56,6 +59,7 @@ class ClassModel {
       'is_active': isActive,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
+      'whatsapp_call_link': whatsappCallLink,
     };
   }
 
@@ -72,6 +76,7 @@ class ClassModel {
     DateTime? updatedAt,
     int? enrolledStudentsCount,
     String? teacherName,
+    String? whatsappCallLink,
   }) {
     return ClassModel(
       id: id ?? this.id,
@@ -86,6 +91,7 @@ class ClassModel {
       updatedAt: updatedAt ?? this.updatedAt,
       enrolledStudentsCount: enrolledStudentsCount ?? this.enrolledStudentsCount,
       teacherName: teacherName ?? this.teacherName,
+      whatsappCallLink: whatsappCallLink ?? this.whatsappCallLink,
     );
   }
 }
@@ -140,12 +146,14 @@ class CreateClassRequest {
   final String description;
   final String subject;
   final String gradeLevel;
+  final String? whatsappCallLink;
 
   CreateClassRequest({
     required this.name,
     required this.description,
     required this.subject,
     required this.gradeLevel,
+    this.whatsappCallLink,
   });
 
   Map<String, dynamic> toJson() {
@@ -154,6 +162,7 @@ class CreateClassRequest {
       'description': description,
       'subject': subject,
       'grade_level': gradeLevel,
+      'whatsapp_call_link': whatsappCallLink,
     };
   }
 }
@@ -164,6 +173,7 @@ class UpdateClassRequest {
   final String? subject;
   final String? gradeLevel;
   final bool? isActive;
+  final String? whatsappCallLink;
 
   UpdateClassRequest({
     this.name,
@@ -171,6 +181,7 @@ class UpdateClassRequest {
     this.subject,
     this.gradeLevel,
     this.isActive,
+    this.whatsappCallLink,
   });
 
   Map<String, dynamic> toJson() {
@@ -180,6 +191,7 @@ class UpdateClassRequest {
     if (subject != null) data['subject'] = subject;
     if (gradeLevel != null) data['grade_level'] = gradeLevel;
     if (isActive != null) data['is_active'] = isActive;
+    if (whatsappCallLink != null) data['whatsapp_call_link'] = whatsappCallLink;
     data['updated_at'] = DateTime.now().toIso8601String();
     return data;
   }

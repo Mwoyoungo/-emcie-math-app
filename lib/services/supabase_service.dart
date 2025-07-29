@@ -248,6 +248,119 @@ class SupabaseService {
     }
   }
 
+  // ============================================================================
+  // PERFORMANCE TRACKING METHODS
+  // ============================================================================
+
+  // Record AI message with performance tracking
+  Future<Map<String, dynamic>> recordAIMessage({
+    required String topicTitle,
+    required String aiResponse,
+    required String executionId,
+    String userAnswer = '',
+  }) async {
+    try {
+      final response = await client.rpc('record_ai_message', params: {
+        'p_topic_title': topicTitle,
+        'p_ai_response': aiResponse,
+        'p_execution_id': executionId,
+        'p_user_answer': userAnswer,
+      });
+
+      if (response['success'] == true) {
+        debugPrint('📊 AI Message recorded: Topic=$topicTitle, HasCorrectness=${response['has_correctness']}, IsCorrect=${response['is_correct']}');
+        return {
+          'success': true,
+          'hasCorrectness': response['has_correctness'],
+          'isCorrect': response['is_correct'],
+        };
+      } else {
+        debugPrint('❌ Failed to record AI message: ${response['error']}');
+        return {'success': false, 'error': response['error']};
+      }
+    } catch (e) {
+      debugPrint('❌ Record AI Message Error: $e');
+      return {'success': false, 'error': e.toString()};
+    }
+  }
+
+  // Get performance statistics for a specific topic
+  Future<Map<String, dynamic>> getTopicPerformanceStats(String topicTitle) async {
+    try {
+      final response = await client.rpc('get_topic_performance', params: {
+        'p_topic_title': topicTitle,
+      });
+
+      if (response['success'] == true) {
+        return {
+          'questionsAsked': response['questions_asked'] ?? 0,
+          'correctAnswers': response['correct_answers'] ?? 0,
+          'wrongAnswers': response['wrong_answers'] ?? 0,
+          'answeredQuestions': response['answered_questions'] ?? 0,
+          'accuracyPercentage': response['accuracy_percentage'] ?? 0.0,
+          'lastActivity': response['last_activity'],
+        };
+      } else {
+        return {
+          'questionsAsked': 0,
+          'correctAnswers': 0,
+          'wrongAnswers': 0,
+          'answeredQuestions': 0,
+          'accuracyPercentage': 0.0,
+          'lastActivity': null,
+        };
+      }
+    } catch (e) {
+      debugPrint('❌ Get Topic Performance Stats Error: $e');
+      return {
+        'questionsAsked': 0,
+        'correctAnswers': 0,
+        'wrongAnswers': 0,
+        'answeredQuestions': 0,
+        'accuracyPercentage': 0.0,
+        'lastActivity': null,
+      };
+    }
+  }
+
+  // Get all performance statistics for the current user
+  Future<Map<String, List<Map<String, dynamic>>>> getAllTopicPerformanceStats() async {
+    try {
+      final response = await client.rpc('get_all_topic_performance');
+
+      if (response['success'] == true) {
+        final data = response['data'] as List<dynamic>? ?? [];
+        final performanceList = data.map<Map<String, dynamic>>((item) => {
+          'topicTitle': item['topic_title'] ?? '',
+          'questionsAsked': item['questions_asked'] ?? 0,
+          'correctAnswers': item['correct_answers'] ?? 0,
+          'wrongAnswers': item['wrong_answers'] ?? 0,
+          'answeredQuestions': item['answered_questions'] ?? 0,
+          'accuracyPercentage': item['accuracy_percentage'] ?? 0.0,
+          'lastActivity': item['last_activity'],
+        }).toList();
+
+        return {'performance': performanceList};
+      } else {
+        return {'performance': []};
+      }
+    } catch (e) {
+      debugPrint('❌ Get All Topic Performance Stats Error: $e');
+      return {'performance': []};
+    }
+  }
+
+  // Get questions asked count for a specific topic
+  Future<int> getQuestionsAskedForTopic(String topicTitle) async {
+    try {
+      final stats = await getTopicPerformanceStats(topicTitle);
+      return stats['questionsAsked'] as int;
+    } catch (e) {
+      debugPrint('❌ Get Questions Asked Error: $e');
+      return 0;
+    }
+  }
+
   // Utility Methods
   String? getCurrentUserId() {
     return client.auth.currentUser?.id;
@@ -273,8 +386,8 @@ class SupabaseService {
             value: userId,
           ),
           callback: (payload) async {
-            final sessions = await getUserChatSessions(userId);
-            onUpdate(sessions);
+            // Real-time update callback
+            // You can implement session fetching logic here if needed
           },
         )
         .subscribe();
@@ -293,8 +406,8 @@ class SupabaseService {
             value: userId,
           ),
           callback: (payload) async {
-            final performance = await getUserPerformance(userId);
-            onUpdate(performance);
+            // Real-time update callback for performance
+            // You can implement performance fetching logic here if needed
           },
         )
         .subscribe();

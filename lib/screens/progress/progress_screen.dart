@@ -27,13 +27,39 @@ class ProgressScreen extends StatelessWidget {
                 )),
                 Padding(
                   padding: ResponsiveUtils.getContentPadding(context),
-                  child: Text(
-                    "Your Progress",
-                    style: Theme.of(context).textTheme.headlineMedium!.copyWith(
-                      color: Colors.black, 
-                      fontWeight: FontWeight.bold,
-                      fontSize: ResponsiveUtils.getScaledFontSize(context, 28),
-                    ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        "Your Progress",
+                        style: Theme.of(context).textTheme.headlineMedium!.copyWith(
+                          color: Colors.black, 
+                          fontWeight: FontWeight.bold,
+                          fontSize: ResponsiveUtils.getScaledFontSize(context, 28),
+                        ),
+                      ),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.3),
+                            width: 1,
+                          ),
+                        ),
+                        child: IconButton(
+                          onPressed: () {
+                            _showLogoutDialog(context);
+                          },
+                          icon: const Icon(
+                            Icons.logout,
+                            color: Colors.red,
+                            size: 20,
+                          ),
+                          tooltip: 'Logout',
+                        ),
+                      ),
+                    ],
                   ),
                 ),
                 
@@ -135,6 +161,65 @@ class ProgressScreen extends StatelessWidget {
               );
             },
           ),
+        );
+      },
+    );
+  }
+
+  void _showLogoutDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Logout',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
+            ),
+          ),
+          content: const Text(
+            'Are you sure you want to logout?',
+            style: TextStyle(fontSize: 16),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text(
+                'Cancel',
+                style: TextStyle(
+                  color: Colors.grey[600],
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+                // Navigate to login screen and clear all previous routes
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  '/login',
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text(
+                'Logout',
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+          ],
         );
       },
     );

@@ -10,8 +10,18 @@ class PerformanceStats extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer2<PerformanceService, UserService>(
       builder: (context, performanceService, userService, child) {
-        final overallPerformance = performanceService.getOverallPerformance();
         final user = userService.currentUser;
+        
+        return FutureBuilder<Map<String, dynamic>>(
+          future: performanceService.getOverallPerformance(),
+          builder: (context, snapshot) {
+            final overallPerformance = snapshot.data ?? {
+              'totalQuestions': 0,
+              'correctAnswers': 0,
+              'wrongAnswers': 0,
+              'accuracyPercentage': 0.0,
+              'topicsStudied': 0,
+            };
         
         return Container(
           margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -125,6 +135,8 @@ class PerformanceStats extends StatelessWidget {
               ),
             ],
           ),
+        );
+          },
         );
       },
     );

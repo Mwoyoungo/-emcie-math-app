@@ -12,6 +12,9 @@ class TopicTile extends StatelessWidget {
     this.progress = 0.0,
     this.badge,
     this.hasActiveSession = false,
+    this.questionsAsked = 0,
+    this.correctAnswers = 0,
+    this.wrongAnswers = 0,
   });
 
   final String title, description, iconSrc;
@@ -19,6 +22,7 @@ class TopicTile extends StatelessWidget {
   final double progress; // 0.0 to 1.0
   final String? badge; // "Gold", "Silver", "Bronze"
   final bool hasActiveSession;
+  final int questionsAsked, correctAnswers, wrongAnswers;
 
   @override
   Widget build(BuildContext context) {
@@ -114,8 +118,33 @@ class TopicTile extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const Spacer(),
+            // Performance statistics
+            if (questionsAsked > 0) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  _buildStatChip(
+                    "$questionsAsked Q",
+                    Colors.white.withOpacity(0.3),
+                    Colors.white,
+                  ),
+                  const SizedBox(width: 4),
+                  _buildStatChip(
+                    "✓ $correctAnswers",
+                    const Color(0xFF4CAF50).withOpacity(0.3),
+                    const Color(0xFF4CAF50),
+                  ),
+                  const SizedBox(width: 4),
+                  _buildStatChip(
+                    "✗ $wrongAnswers",
+                    const Color(0xFFFF5252).withOpacity(0.3),
+                    const Color(0xFFFF5252),
+                  ),
+                ],
+              ),
+            ],
             if (progress > 0) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               _buildProgressBar(),
             ] else ...[
               const SizedBox(height: 8),
@@ -229,6 +258,24 @@ class TopicTile extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildStatChip(String text, Color backgroundColor, Color textColor) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w600,
+          color: textColor,
+        ),
+      ),
     );
   }
 }

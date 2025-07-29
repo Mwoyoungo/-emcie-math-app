@@ -17,6 +17,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _descriptionController = TextEditingController();
+  final _whatsappLinkController = TextEditingController();
 
   String _selectedSubject = 'Mathematics';
   String _selectedGrade = '8';
@@ -44,6 +45,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
       _descriptionController.text = widget.classToEdit!.description;
       _selectedSubject = widget.classToEdit!.subject;
       _selectedGrade = widget.classToEdit!.gradeLevel;
+      _whatsappLinkController.text = widget.classToEdit!.whatsappCallLink ?? '';
     }
   }
 
@@ -51,6 +53,7 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
   void dispose() {
     _nameController.dispose();
     _descriptionController.dispose();
+    _whatsappLinkController.dispose();
     super.dispose();
   }
 
@@ -338,6 +341,80 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
                           horizontal: 16, vertical: 16),
                     ),
                   ),
+
+                  const SizedBox(height: 20),
+
+                  // WhatsApp Calling Link
+                  const Text(
+                    'WhatsApp Call Link (for direct video calls)',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextFormField(
+                    controller: _whatsappLinkController,
+                    decoration: InputDecoration(
+                      hintText: 'https://call.whatsapp.com/video/xGcHBAYpDMGLvXG9jkxpPj',
+                      filled: true,
+                      fillColor: Colors.grey[50],
+                      prefixIcon: const Icon(
+                        Icons.video_call,
+                        color: Color(0xFF25D366),
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                            color: Color(0xFF25D366), width: 2),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 16),
+                    ),
+                    validator: (value) {
+                      if (value != null && value.trim().isNotEmpty) {
+                        if (!value.startsWith('https://call.whatsapp.com/')) {
+                          return 'Please enter a valid WhatsApp call link (https://call.whatsapp.com/...)';
+                        }
+                      }
+                      return null;
+                    },
+                  ),
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF25D366).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: const Color(0xFF25D366).withOpacity(0.3),
+                      ),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Color(0xFF25D366),
+                          size: 16,
+                        ),
+                        SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Students will join your WhatsApp call directly. Create a call link in WhatsApp: Settings > Linked Devices > Link a Device > Call Link',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF25D366),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -428,6 +505,9 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
           description: _descriptionController.text.trim(),
           subject: _selectedSubject,
           gradeLevel: _selectedGrade,
+          whatsappCallLink: _whatsappLinkController.text.trim().isNotEmpty
+              ? _whatsappLinkController.text.trim()
+              : null,
         );
 
         final updatedClass = await classService.updateClass(
@@ -451,6 +531,9 @@ class _CreateClassScreenState extends State<CreateClassScreen> {
           description: _descriptionController.text.trim(),
           subject: _selectedSubject,
           gradeLevel: _selectedGrade,
+          whatsappCallLink: _whatsappLinkController.text.trim().isNotEmpty
+              ? _whatsappLinkController.text.trim()
+              : null,
         );
 
         final newClass = await classService.createClass(createRequest);

@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'supabase_service.dart';
 
 class QuestionResult {
   final String questionText;
@@ -86,11 +87,67 @@ class TopicPerformance {
 }
 
 class PerformanceService extends ChangeNotifier {
-  final Map<String, TopicPerformance> _topicPerformances = {};
+  final SupabaseService _supabaseService = SupabaseService.instance;
+  final Map<String, Map<String, dynamic>> _cachedStats = {}; // Cache for performance stats
   
-  Map<String, TopicPerformance> get topicPerformances => Map.unmodifiable(_topicPerformances);
+  Map<String, TopicPerformance> get topicPerformances => {}; // Kept for compatibility
 
-  // Track a question result
+  // Track every AI message as a question asked (now uses database)
+  Future<void> recordAIMessage({
+    required String topicTitle,
+    required String aiResponse,
+    required String executionId,
+    String userAnswer = '',
+  }) async {
+    try {
+      final result = await _supabaseService.recordAIMessage(
+        topicTitle: topicTitle,
+        aiResponse: aiResponse,
+        executionId: executionId,
+        userAnswer: userAnswer,
+      );
+
+      if (result['success'] == true) {
+        // Clear cache for this topic to force refresh on next access
+        _cachedStats.remove(topicTitle);
+        notifyListeners();
+      }
+    } catch (e) {
+      debugPrint('❌ Error recording AI message: $e');
+    }
+  }
+
+  // Get total questions asked (AI messages) for a topic
+  Future<int> getQuestionsAsked(String topicTitle) async {
+    try {
+      final stats = await _getTopicStats(topicTitle);
+      return stats['questionsAsked'] as int;
+    } catch (e) {
+      debugPrint('❌ Error getting questions asked: $e');
+      return 0;
+    }
+  }
+
+  // Synchronous version for compatibility (returns cached data or 0)
+  int getQuestionsAskedSync(String topicTitle) {
+    final cachedStats = _cachedStats[topicTitle];
+    return cachedStats?['questionsAsked'] as int? ?? 0;
+  }
+
+  // Get cached or fetch topic statistics
+  Future<Map<String, dynamic>> _getTopicStats(String topicTitle) async {
+    // Return cached stats if available
+    if (_cachedStats.containsKey(topicTitle)) {
+      return _cachedStats[topicTitle]!;
+    }
+
+    // Fetch from database
+    final stats = await _supabaseService.getTopicPerformanceStats(topicTitle);
+    _cachedStats[topicTitle] = stats;
+    return stats;
+  }
+
+  // Legacy method - now handled by recordAIMessage
   void recordQuestionResult({
     required String topicTitle,
     required String questionText,
@@ -98,83 +155,129 @@ class PerformanceService extends ChangeNotifier {
     required String aiResponse,
     required String executionId,
   }) {
-    // Parse AI response to determine if answer is correct
-    final isCorrect = _parseCorrectness(aiResponse);
-    
-    final result = QuestionResult(
-      questionText: questionText,
-      userAnswer: userAnswer,
-      isCorrect: isCorrect,
-      timestamp: DateTime.now(),
-      topicTitle: topicTitle,
-      executionId: executionId,
-    );
+    // This method is now handled by recordAIMessage in the database
+    // Keeping for backward compatibility but not used
+    debugPrint('📊 Legacy recordQuestionResult called - use recordAIMessage instead');
+  }
 
-    // Get or create topic performance
-    if (!_topicPerformances.containsKey(topicTitle)) {
-      _topicPerformances[topicTitle] = TopicPerformance(
+  // Get performance for a specific topic (async version for database)
+  Future<TopicPerformance?> getTopicPerformanceAsync(String topicTitle) async {
+    try {
+      final stats = await _getTopicStats(topicTitle);
+      if (stats['questionsAsked'] == 0) return null;
+
+      // Create mock results for compatibility
+      final results = <QuestionResult>[];
+      final correctCount = stats['correctAnswers'] as int;
+      final wrongCount = stats['wrongAnswers'] as int;
+
+      // Add correct results
+      for (int i = 0; i < correctCount; i++) {
+        results.add(QuestionResult(
+          questionText: 'Database question ${i + 1}',
+          userAnswer: 'Correct answer',
+          isCorrect: true,
+          timestamp: DateTime.now(),
+          topicTitle: topicTitle,
+          executionId: 'db_$i',
+        ));
+      }
+
+      // Add wrong results
+      for (int i = 0; i < wrongCount; i++) {
+        results.add(QuestionResult(
+          questionText: 'Database question ${correctCount + i + 1}',
+          userAnswer: 'Wrong answer',
+          isCorrect: false,
+          timestamp: DateTime.now(),
+          topicTitle: topicTitle,
+          executionId: 'db_wrong_$i',
+        ));
+      }
+
+      return TopicPerformance(
         topicTitle: topicTitle,
-        results: [],
+        results: results,
       );
+    } catch (e) {
+      debugPrint('❌ Error getting topic performance: $e');
+      return null;
     }
-
-    // Add result to topic performance
-    final updatedResults = List<QuestionResult>.from(_topicPerformances[topicTitle]!.results);
-    updatedResults.add(result);
-    
-    _topicPerformances[topicTitle] = TopicPerformance(
-      topicTitle: topicTitle,
-      results: updatedResults,
-    );
-
-    debugPrint('📊 Recorded ${isCorrect ? "CORRECT" : "WRONG"} answer for $topicTitle');
-    debugPrint('📈 Topic stats: ${_topicPerformances[topicTitle]!.correctAnswers}/${_topicPerformances[topicTitle]!.totalQuestions} (${_topicPerformances[topicTitle]!.accuracyPercentage.toStringAsFixed(1)}%)');
-    
-    notifyListeners();
   }
 
-  // Parse AI response to determine correctness
-  bool _parseCorrectness(String aiResponse) {
-    final upperResponse = aiResponse.toUpperCase();
-    
-    // Look for [CORRECT] or [WRONG] in the response
-    if (upperResponse.contains('[CORRECT]') || upperResponse.contains('CORRECT')) {
-      return true;
-    }
-    if (upperResponse.contains('[WRONG]') || upperResponse.contains('WRONG')) {
-      return false;
-    }
-    
-    // Fallback: look for positive/negative indicators
-    if (upperResponse.contains('WELL DONE') || 
-        upperResponse.contains('EXCELLENT') || 
-        upperResponse.contains('PERFECT') ||
-        upperResponse.contains('GREAT JOB') ||
-        upperResponse.contains('THAT\'S RIGHT') ||
-        upperResponse.contains('EXACTLY')) {
-      return true;
-    }
-    
-    if (upperResponse.contains('INCORRECT') || 
-        upperResponse.contains('NOT QUITE') || 
-        upperResponse.contains('TRY AGAIN') ||
-        upperResponse.contains('ALMOST') ||
-        upperResponse.contains('CLOSE, BUT')) {
-      return false;
-    }
-    
-    // If we can't determine, assume it's informational (not a question result)
-    return false;
-  }
-
-  // Get performance for a specific topic
+  // Synchronous version for compatibility (returns cached data or null)
   TopicPerformance? getTopicPerformance(String topicTitle) {
-    return _topicPerformances[topicTitle];
+    final cachedStats = _cachedStats[topicTitle];
+    if (cachedStats == null || cachedStats['questionsAsked'] == 0) return null;
+
+    // Create mock results from cached data
+    final results = <QuestionResult>[];
+    final correctCount = cachedStats['correctAnswers'] as int;
+    final wrongCount = cachedStats['wrongAnswers'] as int;
+
+    // Add correct results
+    for (int i = 0; i < correctCount; i++) {
+      results.add(QuestionResult(
+        questionText: 'Cached question ${i + 1}',
+        userAnswer: 'Correct answer',
+        isCorrect: true,
+        timestamp: DateTime.now(),
+        topicTitle: topicTitle,
+        executionId: 'cached_$i',
+      ));
+    }
+
+    // Add wrong results
+    for (int i = 0; i < wrongCount; i++) {
+      results.add(QuestionResult(
+        questionText: 'Cached question ${correctCount + i + 1}',
+        userAnswer: 'Wrong answer',
+        isCorrect: false,
+        timestamp: DateTime.now(),
+        topicTitle: topicTitle,
+        executionId: 'cached_wrong_$i',
+      ));
+    }
+
+    return TopicPerformance(
+      topicTitle: topicTitle,
+      results: results,
+    );
   }
 
-  // Get overall performance across all topics
-  Map<String, dynamic> getOverallPerformance() {
-    if (_topicPerformances.isEmpty) {
+  // Get overall performance across all topics (database version)
+  Future<Map<String, dynamic>> getOverallPerformance() async {
+    try {
+      final allStats = await _supabaseService.getAllTopicPerformanceStats();
+      final performance = allStats['performance'] as List<Map<String, dynamic>>;
+      
+      if (performance.isEmpty) {
+        return {
+          'totalQuestions': 0,
+          'correctAnswers': 0,
+          'wrongAnswers': 0,
+          'accuracyPercentage': 0.0,
+          'topicsStudied': 0,
+        };
+      }
+
+      int totalQuestions = 0;
+      int correctAnswers = 0;
+      
+      for (final topicStats in performance) {
+        totalQuestions += topicStats['questionsAsked'] as int;
+        correctAnswers += topicStats['correctAnswers'] as int;
+      }
+
+      return {
+        'totalQuestions': totalQuestions,
+        'correctAnswers': correctAnswers,
+        'wrongAnswers': totalQuestions - correctAnswers,
+        'accuracyPercentage': totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0.0,
+        'topicsStudied': performance.length,
+      };
+    } catch (e) {
+      debugPrint('❌ Error getting overall performance: $e');
       return {
         'totalQuestions': 0,
         'correctAnswers': 0,
@@ -183,53 +286,42 @@ class PerformanceService extends ChangeNotifier {
         'topicsStudied': 0,
       };
     }
+  }
 
-    int totalQuestions = 0;
-    int correctAnswers = 0;
-    
-    for (final performance in _topicPerformances.values) {
-      totalQuestions += performance.totalQuestions;
-      correctAnswers += performance.correctAnswers;
+  // Check if there are any results for a topic (database version)
+  Future<bool> hasPerformanceData(String topicTitle) async {
+    try {
+      final stats = await _getTopicStats(topicTitle);
+      return stats['questionsAsked'] > 0;
+    } catch (e) {
+      debugPrint('❌ Error checking performance data: $e');
+      return false;
     }
-
-    return {
-      'totalQuestions': totalQuestions,
-      'correctAnswers': correctAnswers,
-      'wrongAnswers': totalQuestions - correctAnswers,
-      'accuracyPercentage': totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0.0,
-      'topicsStudied': _topicPerformances.length,
-    };
   }
 
-  // Check if there are any results for a topic
-  bool hasPerformanceData(String topicTitle) {
-    return _topicPerformances.containsKey(topicTitle) && 
-           _topicPerformances[topicTitle]!.totalQuestions > 0;
-  }
-
-  // Get recent performance (last 10 questions across all topics)
-  List<QuestionResult> getRecentPerformance() {
-    final allResults = <QuestionResult>[];
-    
-    for (final performance in _topicPerformances.values) {
-      allResults.addAll(performance.results);
+  // Get recent performance (last 10 questions across all topics) - database version
+  Future<List<QuestionResult>> getRecentPerformance() async {
+    try {
+      // This would require a database query to get recent results
+      // For now, return empty list as this is not critical for basic functionality
+      return <QuestionResult>[];
+    } catch (e) {
+      debugPrint('❌ Error getting recent performance: $e');
+      return <QuestionResult>[];
     }
-    
-    allResults.sort((a, b) => b.timestamp.compareTo(a.timestamp));
-    return allResults.take(10).toList();
   }
 
-  // Clear all performance data
+  // Clear all performance data (cache only - database persists)
   void clearAllPerformance() {
-    _topicPerformances.clear();
-    debugPrint('🗑️ Cleared all performance data');
+    _cachedStats.clear();
+    debugPrint('🗑️ Cleared cached performance data');
     notifyListeners();
   }
 
-  // Clear performance for specific topic
+  // Clear performance for specific topic (cache only - database persists)
   void clearTopicPerformance(String topicTitle) {
-    _topicPerformances.remove(topicTitle);
-    debugPrint('🗑️ Cleared performance data for $topicTitle');
+    _cachedStats.remove(topicTitle);
+    debugPrint('🗑️ Cleared cached performance data for $topicTitle');
     notifyListeners();
   }
 }
