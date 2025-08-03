@@ -25,6 +25,7 @@ class _SignInFormState extends State<SignInForm> {
   final TextEditingController _subjectController = TextEditingController();
   String? _selectedGrade;
   String _selectedRole = 'student';
+  String _selectedUniversityType = 'high_school';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   
@@ -62,7 +63,7 @@ class _SignInFormState extends State<SignInForm> {
     Future.delayed(
       const Duration(seconds: 1),
       () async {
-        if (_formKey.currentState!.validate() && (_selectedRole == 'teacher' || _selectedGrade != null)) {
+        if (_formKey.currentState!.validate() && (_selectedRole == 'teacher' || (_selectedRole == 'student' && (_selectedUniversityType == 'university' || _selectedGrade != null)))) {
           try {
             // Create account with Supabase
             final supabaseService = SupabaseService.instance;
@@ -70,9 +71,10 @@ class _SignInFormState extends State<SignInForm> {
               email: _emailController.text.trim(),
               password: _passwordController.text,
               fullName: _nameController.text.trim(),
-              grade: _selectedRole == 'student' ? _selectedGrade! : 'N/A',
+              grade: _selectedRole == 'student' && _selectedUniversityType == 'high_school' ? _selectedGrade! : 'N/A',
               role: _selectedRole,
               subjectSpecialization: _selectedRole == 'teacher' ? _subjectController.text.trim() : null,
+              universityType: _selectedRole == 'student' ? _selectedUniversityType : 'high_school',
             );
             
             // Save user data to local state
@@ -81,10 +83,11 @@ class _SignInFormState extends State<SignInForm> {
             // Save user data to local state
               userService.setUser(
                 fullName: _nameController.text.trim(),
-                grade: _selectedRole == 'student' ? _selectedGrade! : 'N/A',
+                grade: _selectedRole == 'student' && _selectedUniversityType == 'high_school' ? _selectedGrade! : 'N/A',
                 email: _emailController.text.trim(),
                 role: _selectedRole,
                 subjectSpecialization: _selectedRole == 'teacher' ? _subjectController.text.trim() : null,
+                universityType: _selectedRole == 'student' ? _selectedUniversityType : 'high_school',
               );
             }
 
@@ -217,6 +220,7 @@ class _SignInFormState extends State<SignInForm> {
                       _selectedRole = value!;
                       if (_selectedRole == 'teacher') {
                         _selectedGrade = null;
+                        _selectedUniversityType = 'high_school';
                       }
                     });
                   },
@@ -224,7 +228,7 @@ class _SignInFormState extends State<SignInForm> {
               ),
               if (_selectedRole == 'student') ...[
                 const Text(
-                  "Grade",
+                  "Education Level",
                   style: TextStyle(
                     color: Colors.black54,
                   ),
@@ -232,9 +236,40 @@ class _SignInFormState extends State<SignInForm> {
                 Padding(
                   padding: const EdgeInsets.only(top: 8, bottom: 16),
                   child: DropdownButtonFormField<String>(
+                    value: _selectedUniversityType,
+                    decoration: const InputDecoration(
+                      prefixIcon: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8),
+                        child: Icon(Icons.school_outlined, color: Colors.black54),
+                      ),
+                    ),
+                    items: const [
+                      DropdownMenuItem(value: "high_school", child: Text("High School")),
+                      DropdownMenuItem(value: "university", child: Text("University")),
+                    ],
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedUniversityType = value!;
+                        if (_selectedUniversityType == 'university') {
+                          _selectedGrade = null;
+                        }
+                      });
+                    },
+                  ),
+                ),
+                if (_selectedUniversityType == 'high_school') ...[
+                  const Text(
+                    "Grade",
+                    style: TextStyle(
+                      color: Colors.black54,
+                    ),
+                  ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 16),
+                  child: DropdownButtonFormField<String>(
                     value: _selectedGrade,
                     validator: (value) {
-                      if (value == null || value.isEmpty) {
+                      if (_selectedRole == 'student' && _selectedUniversityType == 'high_school' && (value == null || value.isEmpty)) {
                         return "";
                       }
                       return null;
@@ -258,6 +293,7 @@ class _SignInFormState extends State<SignInForm> {
                     hint: const Text("Select your grade"),
                   ),
                 ),
+                ],
               ],
               if (_selectedRole == 'teacher') ...[
                 const Text(

@@ -36,6 +36,12 @@ class _ChatScreenState extends State<ChatScreen> {
   int _totalQuestionsAsked = 0;
   String currentSessionId = '';
 
+  bool get _isUniversityStudent {
+    final userService = Provider.of<UserService>(context, listen: false);
+    final user = userService.currentUser;
+    return user?.role == 'student' && user?.universityType == 'university';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -121,7 +127,7 @@ class _ChatScreenState extends State<ChatScreen> {
     try {
       // Send initialization message to AI (this won't be shown to user)
       final aiResponse =
-          await AIService.getAssessmentResponse(initMessage, chatId: chatId);
+          await AIService.getAssessmentResponse(initMessage, chatId: chatId, isUniversityStudent: _isUniversityStudent);
 
       // Check if widget is still mounted before calling setState
       if (mounted) {
@@ -149,7 +155,7 @@ class _ChatScreenState extends State<ChatScreen> {
       if (mounted) {
         final fallbackMessage = ChatMessage(
           text:
-              "Hi ${userService.firstName}! I'm Mam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
+              "Hi ${userService.firstName}! I'm Maam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
           isUser: false,
           timestamp: DateTime.now(),
         );
@@ -205,7 +211,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Get AI response
     try {
       final aiResponse = await AIService.getAssessmentResponse(text,
-          chatId: currentSession.chatId);
+          chatId: currentSession.chatId, isUniversityStudent: _isUniversityStudent);
 
       // Add AI response
       if (mounted) {
@@ -316,6 +322,7 @@ class _ChatScreenState extends State<ChatScreen> {
         "Here is my answer in this image.",
         chatId: currentSessionId,
         images: [imageUpload],
+        isUniversityStudent: _isUniversityStudent,
       );
 
       if (mounted) {
@@ -576,9 +583,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
             ),
-            child: const CircleAvatar(
-              backgroundImage: AssetImage("assets/avaters/Avatar 2.jpg"),
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF7553F6),
               radius: 18,
+              child: const Icon(
+                Icons.smart_toy,
+                color: Colors.white,
+                size: 20,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -616,7 +628,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: const Text(
-                      "🌟 Mam Rose",
+                      "🌟 Maam Rose",
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
@@ -760,9 +772,13 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
               ),
-              child: const CircleAvatar(
-                backgroundImage: AssetImage("assets/avaters/Avatar 2.jpg"),
+              child: CircleAvatar(
+                backgroundColor: const Color(0xFF7553F6),
                 radius: 18,
+                child: const Text(
+                  "🤖",
+                  style: TextStyle(fontSize: 20),
+                ),
               ),
             ),
             const SizedBox(width: 12),
@@ -771,7 +787,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    "🌟 Mam Rose - AI Tutor",
+                    "🌟 Maam Rose - AI Tutor",
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -1105,9 +1121,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
             ),
-            child: const CircleAvatar(
-              backgroundImage: AssetImage("assets/avaters/Avatar 2.jpg"),
+            child: CircleAvatar(
+              backgroundColor: const Color(0xFF7553F6),
               radius: 20,
+              child: const Icon(
+                Icons.smart_toy,
+                color: Colors.white,
+                size: 22,
+              ),
             ),
           ),
           const SizedBox(width: 16),
@@ -1116,7 +1137,7 @@ class _ChatScreenState extends State<ChatScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  "🌟 Mam Rose - AI Tutor",
+                  "🌟 Maam Rose - AI Tutor",
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,

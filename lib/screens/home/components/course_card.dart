@@ -71,8 +71,11 @@ class CourseCard extends StatelessWidget {
                         offset: Offset((-10 * index).toDouble(), 0),
                         child: CircleAvatar(
                           radius: 20,
-                          backgroundImage: AssetImage(
-                            "assets/avaters/Avatar ${index + 1}.jpg",
+                          backgroundColor: const Color(0xFF7553F6),
+                          child: const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 22,
                           ),
                         ),
                       ),

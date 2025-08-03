@@ -142,7 +142,7 @@ class _MathInputBarState extends State<MathInputBar> {
                   child: TextField(
                     controller: widget.controller,
                     decoration: const InputDecoration(
-                      hintText: "Ask Mam Rose a math question...",
+                      hintText: "Ask Maam Rose a math question...",
                       border: InputBorder.none,
                       contentPadding: EdgeInsets.symmetric(vertical: 4),
                     ),

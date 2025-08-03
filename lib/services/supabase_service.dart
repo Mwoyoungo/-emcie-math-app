@@ -30,6 +30,7 @@ class SupabaseService {
     required String grade,
     String role = 'student',
     String? subjectSpecialization,
+    String universityType = 'high_school',
   }) async {
     try {
       final response = await client.auth.signUp(
@@ -50,6 +51,7 @@ class SupabaseService {
           grade: grade,
           role: role,
           subjectSpecialization: subjectSpecialization,
+          universityType: universityType,
         );
       }
 
@@ -92,6 +94,7 @@ class SupabaseService {
     required String grade,
     String role = 'student',
     String? subjectSpecialization,
+    String universityType = 'high_school',
   }) async {
     try {
       await client.from('user_profiles').insert({
@@ -99,8 +102,9 @@ class SupabaseService {
         'email': email,
         'full_name': fullName,
         'role': role,
-        'grade': role == 'student' ? grade : null,
+        'grade': role == 'student' && universityType == 'high_school' ? grade : null,
         'subject_specialization': role == 'teacher' ? subjectSpecialization : null,
+        'university_type': universityType,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       });

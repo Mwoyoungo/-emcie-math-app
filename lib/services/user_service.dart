@@ -6,6 +6,7 @@ class UserData {
   final String email;
   final String role;
   final String? subjectSpecialization;
+  final String universityType;
 
   UserData({
     required this.fullName,
@@ -13,6 +14,7 @@ class UserData {
     required this.email,
     this.role = 'student',
     this.subjectSpecialization,
+    this.universityType = 'high_school',
   });
 
   Map<String, dynamic> toJson() => {
@@ -21,6 +23,7 @@ class UserData {
     'email': email,
     'role': role,
     'subjectSpecialization': subjectSpecialization,
+    'universityType': universityType,
   };
 
   factory UserData.fromJson(Map<String, dynamic> json) => UserData(
@@ -29,6 +32,7 @@ class UserData {
     email: json['email'] ?? '',
     role: json['role'] ?? 'student',
     subjectSpecialization: json['subjectSpecialization'],
+    universityType: json['universityType'] ?? 'high_school',
   );
 }
 
@@ -48,6 +52,7 @@ class UserService extends ChangeNotifier {
     required String email,
     String role = 'student',
     String? subjectSpecialization,
+    String universityType = 'high_school',
   }) {
     _currentUser = UserData(
       fullName: fullName,
@@ -55,6 +60,7 @@ class UserService extends ChangeNotifier {
       email: email,
       role: role,
       subjectSpecialization: subjectSpecialization,
+      universityType: universityType,
     );
     notifyListeners();
   }

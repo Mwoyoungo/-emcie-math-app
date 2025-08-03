@@ -67,6 +67,7 @@ class _ImageUploadTestScreenState extends State<ImageUploadTestScreen> {
         "Here is my answer in this image.",
         chatId: 'test_session_${DateTime.now().millisecondsSinceEpoch}',
         images: [imageUpload],
+        isUniversityStudent: false, // Test screen defaults to high school
       );
 
       _addToLog('✅ API call completed');

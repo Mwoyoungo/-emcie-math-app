@@ -113,11 +113,13 @@ class AIResponse {
 
 class AIService {
   static const String _baseUrl = 'https://cloud.flowiseai.com/api/v1/prediction/e07906e0-cbb2-47a9-afc9-cebc4a830321';
+  static const String _universityUrl = 'https://cloud.flowiseai.com/api/v1/prediction/e868e133-0871-477a-b056-eed91a4d4b05';
   
   static Future<AIResponse> getAssessmentResponse(
     String message, {
     String? chatId,
     List<ImageUpload>? images,
+    bool isUniversityStudent = false,
   }) async {
     try {
       // Match the exact format from the JavaScript example
@@ -140,8 +142,9 @@ class AIService {
         }).toList();
       }
 
+      final apiUrl = isUniversityStudent ? _universityUrl : _baseUrl;
       final response = await http.post(
-        Uri.parse(_baseUrl),
+        Uri.parse(apiUrl),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -211,7 +214,7 @@ class AIService {
   static String _getFallbackResponse(String message) {
     // Provide a fallback response if API fails
     if (message.toLowerCase().contains('assessment') || message.toLowerCase().contains('assess')) {
-      return '''Hello! I'm Mam Rose, your AI math tutor! 🌟 
+      return '''Hello! I'm Maam Rose, your AI math tutor! 🌟 
 
 I'm excited to help you with your mathematics assessment. I'll be asking you questions tailored to your grade level and the topic you've selected.
 

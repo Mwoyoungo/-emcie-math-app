@@ -76,10 +76,14 @@ class ChatMessage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const CircleAvatar(
-                        backgroundImage:
-                            AssetImage("assets/avaters/Avatar 2.jpg"),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFF7553F6),
                         radius: 18,
+                        child: const Icon(
+                          Icons.smart_toy,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -134,7 +138,7 @@ class ChatMessage extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   child: const Text(
-                                    "🌟 Mam Rose",
+                                    "🌟 Maam Rose",
                                     style: TextStyle(
                                       fontSize: 12,
                                       fontWeight: FontWeight.w600,
@@ -264,10 +268,14 @@ class ChatMessage extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: const CircleAvatar(
-                        backgroundImage:
-                            AssetImage("assets/avaters/Avatar Default.jpg"),
+                      child: CircleAvatar(
+                        backgroundColor: const Color(0xFF7553F6),
                         radius: 16,
+                        child: const Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 18,
+                        ),
                       ),
                     ),
                   ],

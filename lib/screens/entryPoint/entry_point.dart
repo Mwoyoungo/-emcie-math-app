@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:rive/rive.dart';
 import 'package:rive_animation/constants.dart';
 import 'package:rive_animation/screens/home/home_screen.dart';
+import 'package:rive_animation/screens/home/university_home_screen.dart';
 import 'package:rive_animation/screens/auth/profile_screen.dart'
     as auth_profile;
 import 'package:rive_animation/screens/teacher/teacher_classes_screen.dart';
@@ -98,7 +99,11 @@ class _EntryPointState extends State<EntryPoint>
     } else {
       switch (selectedBottonNav!.title) {
         case "Home":
-          return const HomePage();
+          // Check if user is university student
+          final userService = Provider.of<UserService>(context, listen: false);
+          final isUniversityStudent = userService.currentUser?.role == 'student' && 
+                                      userService.currentUser?.universityType == 'university';
+          return isUniversityStudent ? const UniversityHomePage() : const HomePage();
         case "Classes":
           return const StudentClassesScreen();
         case "Performance":
@@ -106,7 +111,11 @@ class _EntryPointState extends State<EntryPoint>
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:
-          return const HomePage();
+          // Check if user is university student for default case too
+          final userService = Provider.of<UserService>(context, listen: false);
+          final isUniversityStudent = userService.currentUser?.role == 'student' && 
+                                      userService.currentUser?.universityType == 'university';
+          return isUniversityStudent ? const UniversityHomePage() : const HomePage();
       }
     }
   }
