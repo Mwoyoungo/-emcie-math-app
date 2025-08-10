@@ -23,75 +23,55 @@ class MathInputBar extends StatefulWidget {
 class _MathInputBarState extends State<MathInputBar> {
   bool _showMathSymbols = false;
   
-  final List<Map<String, String>> _mathSymbols = [
-    // Basic Operations
-    {'symbol': '±', 'latex': '±'},
-    {'symbol': '×', 'latex': '×'},
-    {'symbol': '÷', 'latex': '÷'},
-    {'symbol': '√', 'latex': '√'},
-    {'symbol': '∛', 'latex': '∛'},
-    {'symbol': '^', 'latex': '^'},
-    {'symbol': '²', 'latex': '²'},
-    {'symbol': '³', 'latex': '³'},
-    
-    // Fractions
-    {'symbol': '½', 'latex': '½'},
-    {'symbol': '⅓', 'latex': '⅓'},
-    {'symbol': '¼', 'latex': '¼'},
-    {'symbol': '¾', 'latex': '¾'},
-    {'symbol': '/', 'latex': '/'},
-    
-    // Comparison
-    {'symbol': '≤', 'latex': '≤'},
-    {'symbol': '≥', 'latex': '≥'},
-    {'symbol': '≠', 'latex': '≠'},
-    {'symbol': '≈', 'latex': '≈'},
-    {'symbol': '<', 'latex': '<'},
-    {'symbol': '>', 'latex': '>'},
-    
-    // Greek Letters
-    {'symbol': 'α', 'latex': 'α'},
-    {'symbol': 'β', 'latex': 'β'},
-    {'symbol': 'γ', 'latex': 'γ'},
-    {'symbol': 'δ', 'latex': 'δ'},
-    {'symbol': 'θ', 'latex': 'θ'},
-    {'symbol': 'λ', 'latex': 'λ'},
-    {'symbol': 'μ', 'latex': 'μ'},
-    {'symbol': 'π', 'latex': 'π'},
-    {'symbol': 'σ', 'latex': 'σ'},
-    {'symbol': 'Σ', 'latex': 'Σ'},
-    {'symbol': 'φ', 'latex': 'φ'},
-    {'symbol': 'ω', 'latex': 'ω'},
-    
-    // Special Symbols
-    {'symbol': '∞', 'latex': '∞'},
-    {'symbol': '°', 'latex': '°'},
-    {'symbol': '∑', 'latex': '∑'},
-    {'symbol': '∏', 'latex': '∏'},
-    {'symbol': '∫', 'latex': '∫'},
-    {'symbol': '∆', 'latex': '∆'},
-    {'symbol': '∇', 'latex': '∇'},
-    {'symbol': '∂', 'latex': '∂'},
-    
-    // Logic & Sets
-    {'symbol': '∈', 'latex': '∈'},
-    {'symbol': '∉', 'latex': '∉'},
-    {'symbol': '⊂', 'latex': '⊂'},
-    {'symbol': '⊆', 'latex': '⊆'},
-    {'symbol': '∪', 'latex': '∪'},
-    {'symbol': '∩', 'latex': '∩'},
-    {'symbol': '∅', 'latex': '∅'},
-    {'symbol': '∀', 'latex': '∀'},
-    {'symbol': '∃', 'latex': '∃'},
-    
-    // Brackets
-    {'symbol': '(', 'latex': '('},
-    {'symbol': ')', 'latex': ')'},
-    {'symbol': '[', 'latex': '['},
-    {'symbol': ']', 'latex': ']'},
-    {'symbol': '{', 'latex': '{'},
-    {'symbol': '}', 'latex': '}'},
-    {'symbol': '|', 'latex': '|'},
+  // Row 1: Powers, roots, logs, Greek letters, calculus
+  final List<Map<String, dynamic>> _mathSymbolsRow1 = [
+    {'symbol': 'x²', 'type': 'template', 'template': '□²'},
+    {'symbol': 'xⁿ', 'type': 'template', 'template': '□^□'},
+    {'symbol': '√', 'type': 'template', 'template': '√(□)'},
+    {'symbol': 'ⁿ√□', 'type': 'template', 'template': '□√(□)'},
+    {'symbol': 'logₐ', 'type': 'template', 'template': 'log_{□}(□)'},
+    {'symbol': 'π', 'type': 'static'},
+    {'symbol': 'θ', 'type': 'static'},
+    {'symbol': '∞', 'type': 'static'},
+    {'symbol': '∫', 'type': 'template', 'template': '∫_{□}^{□} (□) dx'},
+    {'symbol': 'd/dx', 'type': 'template', 'template': 'd/dx (□)'},
+    {'symbol': '|x|', 'type': 'template', 'template': '|□|'},
+    {'symbol': 'x!', 'type': 'template', 'template': '□!'},
+  ];
+
+  // Row 2: Comparisons, operations, functions, fractions
+  final List<Map<String, dynamic>> _mathSymbolsRow2 = [
+    {'symbol': '≥', 'type': 'static'},
+    {'symbol': '≤', 'type': 'static'},
+    {'symbol': '≠', 'type': 'static'},
+    {'symbol': '≈', 'type': 'static'},
+    {'symbol': '±', 'type': 'static'},
+    {'symbol': '·', 'type': 'static'},
+    {'symbol': '÷', 'type': 'static'},
+    {'symbol': 'a/b', 'type': 'template', 'template': '□/□'},
+    {'symbol': '∘', 'type': 'static'},
+    {'symbol': 'x̄', 'type': 'static'},
+    {'symbol': '□', 'type': 'static'},
+    {'symbol': 'ln', 'type': 'template', 'template': 'ln(□)'},
+    {'symbol': 'eⁿ', 'type': 'template', 'template': 'e^□'},
+  ];
+
+  // Row 3: Advanced calculus, trigonometry, sets, brackets
+  final List<Map<String, dynamic>> _mathSymbolsRow3 = [
+    {'symbol': "(□)'", 'type': 'template', 'template': "(□)'"},
+    {'symbol': '∂/∂x', 'type': 'template', 'template': '∂/∂x (□)'},
+    {'symbol': '∮', 'type': 'template', 'template': '∮ (□) dx'},
+    {'symbol': 'lim', 'type': 'template', 'template': 'lim_{x→□} (□)'},
+    {'symbol': 'Σ', 'type': 'template', 'template': 'Σ_{n=□}^{□} (□)'},
+    {'symbol': 'sin', 'type': 'template', 'template': 'sin(□)'},
+    {'symbol': 'cos', 'type': 'template', 'template': 'cos(□)'},
+    {'symbol': 'tan', 'type': 'template', 'template': 'tan(□)'},
+    {'symbol': 'cot', 'type': 'template', 'template': 'cot(□)'},
+    {'symbol': '∈', 'type': 'static'},
+    {'symbol': '∅', 'type': 'static'},
+    {'symbol': '()', 'type': 'template', 'template': '(□)'},
+    {'symbol': '[]', 'type': 'template', 'template': '[□]'},
+    {'symbol': '{}', 'type': 'template', 'template': '{□}'},
   ];
 
   @override
@@ -127,6 +107,24 @@ class _MathInputBarState extends State<MathInputBar> {
                   padding: EdgeInsets.zero,
                 ),
               ),
+              Container(
+                width: 32,
+                height: 32,
+                margin: const EdgeInsets.only(right: 8),
+                child: IconButton(
+                  onPressed: () {
+                    setState(() {
+                      _showMathSymbols = !_showMathSymbols;
+                    });
+                  },
+                  icon: Icon(
+                    _showMathSymbols ? Icons.keyboard_hide : Icons.functions,
+                    size: 18,
+                  ),
+                  color: const Color(0xFF7553F6),
+                  padding: EdgeInsets.zero,
+                ),
+              ),
               Expanded(
                 child: Container(
                   margin: const EdgeInsets.symmetric(horizontal: 8),
@@ -141,10 +139,15 @@ class _MathInputBarState extends State<MathInputBar> {
                   ),
                   child: TextField(
                     controller: widget.controller,
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       hintText: "Ask Maam Rose a math question...",
                       border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 4),
+                      contentPadding: const EdgeInsets.symmetric(vertical: 4),
+                      suffixIcon: _hasPlaceholders() ? IconButton(
+                        icon: const Icon(Icons.arrow_forward, size: 16),
+                        onPressed: _jumpToNextPlaceholder,
+                        tooltip: 'Next placeholder',
+                      ) : null,
                     ),
                     style: const TextStyle(fontSize: 16),
                     maxLines: null,
@@ -181,7 +184,6 @@ class _MathInputBarState extends State<MathInputBar> {
 
   Widget _buildMathSymbolsPanel() {
     return Container(
-      height: 200,
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -201,6 +203,7 @@ class _MathInputBarState extends State<MathInputBar> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             children: [
@@ -229,58 +232,176 @@ class _MathInputBarState extends State<MathInputBar> {
             ],
           ),
           const SizedBox(height: 12),
-          Expanded(
-            child: GridView.builder(
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 10,
-                mainAxisSpacing: 6,
-                crossAxisSpacing: 6,
-                childAspectRatio: 1,
-              ),
-              itemCount: _mathSymbols.length,
-              itemBuilder: (context, index) {
-                final symbol = _mathSymbols[index];
-                return GestureDetector(
-                  onTap: () {
-                    widget.onInsertSymbol(symbol['symbol']!);
-                    // Add haptic feedback
-                    // HapticFeedback.lightImpact();
-                  },
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 150),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                        color: const Color(0xFFDEE3F2),
-                        width: 1,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.05),
-                          offset: const Offset(0, 1),
-                          blurRadius: 2,
-                        ),
-                      ],
-                    ),
-                    child: Center(
-                      child: Text(
-                        symbol['symbol']!,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Color(0xFF7553F6),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
+          
+          // Row 1
+          _buildSymbolRow(_mathSymbolsRow1),
+          const SizedBox(height: 8),
+          
+          // Row 2  
+          _buildSymbolRow(_mathSymbolsRow2),
+          const SizedBox(height: 8),
+          
+          // Row 3
+          _buildSymbolRow(_mathSymbolsRow3),
         ],
       ),
     );
+  }
+
+  Widget _buildSymbolRow(List<Map<String, dynamic>> symbols) {
+    return SizedBox(
+      height: 40,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: symbols.length,
+        itemBuilder: (context, index) {
+          final symbol = symbols[index];
+          return Container(
+            margin: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () {
+                _handleSmartSymbolInput(symbol['symbol']!);
+              },
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: const Color(0xFFDEE3F2),
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      offset: const Offset(0, 1),
+                      blurRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Text(
+                    symbol['symbol']!,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _handleSmartSymbolInput(String symbol) {
+    // Find the symbol data to determine if it's static or template
+    Map<String, dynamic>? symbolData;
+    
+    // Search through all rows to find the symbol
+    for (final row in [_mathSymbolsRow1, _mathSymbolsRow2, _mathSymbolsRow3]) {
+      symbolData = row.firstWhere(
+        (item) => item['symbol'] == symbol,
+        orElse: () => {},
+      );
+      if (symbolData.isNotEmpty) break;
+    }
+
+    if (symbolData == null || symbolData.isEmpty) return;
+
+    final controller = widget.controller;
+    final text = controller.text;
+    final selection = controller.selection;
+    final cursorPos = selection.baseOffset;
+
+    if (symbolData['type'] == 'static') {
+      // Static symbols - just insert the symbol
+      _insertText(symbolData['symbol']);
+    } else if (symbolData['type'] == 'template') {
+      // Template symbols - insert the template and position cursor at first placeholder
+      final template = symbolData['template'] as String;
+      _insertTemplate(template);
+    }
+  }
+
+  void _insertText(String text) {
+    final controller = widget.controller;
+    final selection = controller.selection;
+    final newText = controller.text.replaceRange(
+      selection.start,
+      selection.end,
+      text,
+    );
+    final newPosition = selection.start + text.length;
+    controller.value = TextEditingValue(
+      text: newText,
+      selection: TextSelection.collapsed(offset: newPosition),
+    );
+  }
+
+  void _insertTemplate(String template) {
+    final controller = widget.controller;
+    final selection = controller.selection;
+    final newText = controller.text.replaceRange(
+      selection.start,
+      selection.end,
+      template,
+    );
+    
+    // Find the first placeholder (□) and position cursor there
+    final firstPlaceholderIndex = template.indexOf('□');
+    int newCursorPos;
+    
+    if (firstPlaceholderIndex != -1) {
+      newCursorPos = selection.start + firstPlaceholderIndex;
+      // Select the placeholder so user can immediately type to replace it
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection(
+          baseOffset: newCursorPos,
+          extentOffset: newCursorPos + 1, // Select the □ character
+        ),
+      );
+    } else {
+      // No placeholder found, just position cursor at end
+      newCursorPos = selection.start + template.length;
+      controller.value = TextEditingValue(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newCursorPos),
+      );
+    }
+  }
+
+  bool _hasPlaceholders() {
+    return widget.controller.text.contains('□');
+  }
+
+  void _jumpToNextPlaceholder() {
+    final text = widget.controller.text;
+    final currentPos = widget.controller.selection.baseOffset;
+    
+    // Find the next placeholder after current cursor position
+    final nextPlaceholderIndex = text.indexOf('□', currentPos);
+    
+    if (nextPlaceholderIndex != -1) {
+      // Select the placeholder
+      widget.controller.selection = TextSelection(
+        baseOffset: nextPlaceholderIndex,
+        extentOffset: nextPlaceholderIndex + 1,
+      );
+    } else {
+      // No more placeholders after cursor, find the first one from the beginning
+      final firstPlaceholderIndex = text.indexOf('□');
+      if (firstPlaceholderIndex != -1) {
+        widget.controller.selection = TextSelection(
+          baseOffset: firstPlaceholderIndex,
+          extentOffset: firstPlaceholderIndex + 1,
+        );
+      }
+    }
   }
 
   void _showImageOptions() {
