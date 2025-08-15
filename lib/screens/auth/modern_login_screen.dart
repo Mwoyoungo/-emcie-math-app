@@ -486,6 +486,7 @@ class _ModernLoginScreenState extends State<ModernLoginScreen> {
               role: userProfile['role'] ?? 'student',
               subjectSpecialization: userProfile['subject_specialization'],
               universityType: userProfile['university_type'] ?? 'high_school',
+              curriculum: userProfile['curriculum'] ?? 'caps',
             );
             
             // Navigate to main app
