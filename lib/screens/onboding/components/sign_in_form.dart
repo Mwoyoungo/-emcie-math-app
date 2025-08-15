@@ -26,6 +26,7 @@ class _SignInFormState extends State<SignInForm> {
   String? _selectedGrade;
   String _selectedRole = 'student';
   String _selectedUniversityType = 'high_school';
+  String _selectedCurriculum = 'caps';
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   
@@ -88,6 +89,7 @@ class _SignInFormState extends State<SignInForm> {
                 role: _selectedRole,
                 subjectSpecialization: _selectedRole == 'teacher' ? _subjectController.text.trim() : null,
                 universityType: _selectedRole == 'student' ? _selectedUniversityType : 'high_school',
+                curriculum: _selectedRole == 'student' && _selectedUniversityType == 'high_school' ? _selectedCurriculum : 'caps',
               );
             }
 
@@ -259,6 +261,34 @@ class _SignInFormState extends State<SignInForm> {
                 ),
                 if (_selectedUniversityType == 'high_school') ...[
                   const Text(
+                    "Curriculum",
+                    style: TextStyle(
+                      color: Colors.black54,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.only(top: 8, bottom: 16),
+                    child: DropdownButtonFormField<String>(
+                      value: _selectedCurriculum,
+                      decoration: const InputDecoration(
+                        prefixIcon: Padding(
+                          padding: EdgeInsets.symmetric(horizontal: 8),
+                          child: Icon(Icons.library_books, color: Colors.black54),
+                        ),
+                      ),
+                      items: const [
+                        DropdownMenuItem(value: "caps", child: Text("CAPS (South Africa)")),
+                        DropdownMenuItem(value: "zimsec", child: Text("ZIMSEC (Zimbabwe)")),
+                      ],
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCurriculum = value!;
+                          _selectedGrade = null; // Reset grade when curriculum changes
+                        });
+                      },
+                    ),
+                  ),
+                  const Text(
                     "Grade",
                     style: TextStyle(
                       color: Colors.black54,
@@ -280,10 +310,15 @@ class _SignInFormState extends State<SignInForm> {
                         child: Icon(Icons.school, color: Colors.black54),
                       ),
                     ),
-                    items: const [
+                    items: _selectedCurriculum == 'caps' ? const [
                       DropdownMenuItem(value: "10", child: Text("Grade 10")),
                       DropdownMenuItem(value: "11", child: Text("Grade 11")),
                       DropdownMenuItem(value: "12", child: Text("Grade 12")),
+                    ] : const [
+                      DropdownMenuItem(value: "1", child: Text("Form 1")),
+                      DropdownMenuItem(value: "2", child: Text("Form 2")),
+                      DropdownMenuItem(value: "3", child: Text("Form 3")),
+                      DropdownMenuItem(value: "4", child: Text("Form 4")),
                     ],
                     onChanged: (value) {
                       setState(() {

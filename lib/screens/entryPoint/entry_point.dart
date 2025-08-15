@@ -6,6 +6,7 @@ import 'package:rive/rive.dart';
 import 'package:rive_animation/constants.dart';
 import 'package:rive_animation/screens/home/home_screen.dart';
 import 'package:rive_animation/screens/home/university_home_screen.dart';
+import 'package:rive_animation/screens/home/zimsec_home_screen.dart';
 import 'package:rive_animation/screens/auth/profile_screen.dart'
     as auth_profile;
 import 'package:rive_animation/screens/teacher/teacher_classes_screen.dart';
@@ -99,11 +100,17 @@ class _EntryPointState extends State<EntryPoint>
     } else {
       switch (selectedBottonNav!.title) {
         case "Home":
-          // Check if user is university student
+          // Check user type and curriculum
           final userService = Provider.of<UserService>(context, listen: false);
-          final isUniversityStudent = userService.currentUser?.role == 'student' && 
-                                      userService.currentUser?.universityType == 'university';
-          return isUniversityStudent ? const UniversityHomePage() : const HomePage();
+          final user = userService.currentUser;
+          if (user?.role == 'student') {
+            if (user?.universityType == 'university') {
+              return const UniversityHomePage();
+            } else if (user?.universityType == 'high_school' && user?.curriculum == 'zimsec') {
+              return const ZimsecHomePage();
+            }
+          }
+          return const HomePage(); // CAPS high school or other
         case "Classes":
           return const StudentClassesScreen();
         case "Performance":
@@ -111,11 +118,17 @@ class _EntryPointState extends State<EntryPoint>
         case "Profile":
           return const auth_profile.ProfileScreen();
         default:
-          // Check if user is university student for default case too
+          // Check user type and curriculum for default case too
           final userService = Provider.of<UserService>(context, listen: false);
-          final isUniversityStudent = userService.currentUser?.role == 'student' && 
-                                      userService.currentUser?.universityType == 'university';
-          return isUniversityStudent ? const UniversityHomePage() : const HomePage();
+          final user = userService.currentUser;
+          if (user?.role == 'student') {
+            if (user?.universityType == 'university') {
+              return const UniversityHomePage();
+            } else if (user?.universityType == 'high_school' && user?.curriculum == 'zimsec') {
+              return const ZimsecHomePage();
+            }
+          }
+          return const HomePage(); // CAPS high school or other
       }
     }
   }

@@ -266,7 +266,7 @@ class _ModernLoginScreenState extends State<ModernLoginScreen> {
         ),
         const SizedBox(height: 24),
         const Text(
-          "Welcome Back",
+          "Welcome Back to SRT-Guru",
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,

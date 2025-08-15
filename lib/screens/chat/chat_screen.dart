@@ -42,6 +42,12 @@ class _ChatScreenState extends State<ChatScreen> {
     return user?.role == 'student' && user?.universityType == 'university';
   }
 
+  bool get _isZimsecStudent {
+    final userService = Provider.of<UserService>(context, listen: false);
+    final user = userService.currentUser;
+    return user?.role == 'student' && user?.universityType == 'high_school' && user?.curriculum == 'zimsec';
+  }
+
   @override
   void initState() {
     super.initState();
@@ -120,14 +126,20 @@ class _ChatScreenState extends State<ChatScreen> {
     // Create the hidden initialization message
     final initMessage = AIService.createInitialAssessmentMessage(
       studentName: user.fullName,
-      grade: "Grade ${user.grade}",
+      grade: user.grade,
       subject: widget.topicTitle,
+      isZimsecStudent: _isZimsecStudent,
     );
+    
+    // Debug: Print the initialization message to console
+    debugPrint('🔍 DEBUG: Sending init message: $initMessage');
+    debugPrint('🔍 DEBUG: User data - Name: ${user.fullName}, Grade: ${user.grade}, Topic: ${widget.topicTitle}');
+    debugPrint('🔍 DEBUG: ChatId: $chatId');
 
     try {
       // Send initialization message to AI (this won't be shown to user)
       final aiResponse =
-          await AIService.getAssessmentResponse(initMessage, chatId: chatId, isUniversityStudent: _isUniversityStudent);
+          await AIService.getAssessmentResponse(initMessage, chatId: chatId, isUniversityStudent: _isUniversityStudent, isZimsecStudent: _isZimsecStudent);
 
       // Check if widget is still mounted before calling setState
       if (mounted) {
@@ -154,8 +166,9 @@ class _ChatScreenState extends State<ChatScreen> {
       // Fallback welcome message
       if (mounted) {
         final fallbackMessage = ChatMessage(
-          text:
-              "Hi ${userService.firstName}! I'm Maam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
+          text: _isZimsecStudent 
+              ? "Hi ${userService.firstName}! I'm Math AI, your mathematics assistant! 🤖\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level according to the ZIMSEC curriculum. Let's start with some assessment questions!\n\nAre you ready to begin? 📚✨"
+              : "Hi ${userService.firstName}! I'm Maam Rose, your AI math tutor! 🌟\n\nI'm ready to help you with ${widget.topicTitle} at your ${userService.gradeDisplay} level. Let's start with some assessment questions to understand your current knowledge!\n\nAre you ready to begin? 📚✨",
           isUser: false,
           timestamp: DateTime.now(),
         );
@@ -211,7 +224,7 @@ class _ChatScreenState extends State<ChatScreen> {
     // Get AI response
     try {
       final aiResponse = await AIService.getAssessmentResponse(text,
-          chatId: currentSession.chatId, isUniversityStudent: _isUniversityStudent);
+          chatId: currentSession.chatId, isUniversityStudent: _isUniversityStudent, isZimsecStudent: _isZimsecStudent);
 
       // Add AI response
       if (mounted) {
@@ -323,13 +336,11 @@ class _ChatScreenState extends State<ChatScreen> {
         chatId: currentSessionId,
         images: [imageUpload],
         isUniversityStudent: _isUniversityStudent,
+        isZimsecStudent: _isZimsecStudent,
       );
 
       if (mounted) {
-        // Update session ID if we got a new one
-        if (response.sessionId.isNotEmpty) {
-          currentSessionId = response.sessionId;
-        }
+        // Keep using our consistent session ID for context continuity
 
         // Remove loading message and add AI response
         setState(() {
@@ -627,9 +638,9 @@ class _ChatScreenState extends State<ChatScreen> {
                       color: const Color(0xFF7553F6).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                    child: const Text(
-                      "🌟 Maam Rose",
-                      style: TextStyle(
+                    child: Text(
+                      _isZimsecStudent ? "🤖 Math AI" : "🌟 Maam Rose",
+                      style: const TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                         color: Color(0xFF7553F6),
@@ -786,9 +797,9 @@ class _ChatScreenState extends State<ChatScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    "🌟 Maam Rose - AI Tutor",
-                    style: TextStyle(
+                  Text(
+                    _isZimsecStudent ? "🤖 Math AI" : "🌟 Maam Rose - AI Tutor",
+                    style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
                       color: Color(0xFF7553F6),
@@ -1136,9 +1147,9 @@ class _ChatScreenState extends State<ChatScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "🌟 Maam Rose - AI Tutor",
-                  style: TextStyle(
+                Text(
+                  _isZimsecStudent ? "🤖 Math AI" : "🌟 Maam Rose - AI Tutor",
+                  style: const TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w600,
                     color: Color(0xFF7553F6),

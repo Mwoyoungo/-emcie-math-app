@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'math_widgets.dart';
 
 class MathInputBar extends StatefulWidget {
   final TextEditingController controller;
@@ -280,14 +281,7 @@ class _MathInputBarState extends State<MathInputBar> {
                   ],
                 ),
                 child: Center(
-                  child: Text(
-                    symbol['symbol']!,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFF7553F6),
-                    ),
-                  ),
+                  child: _buildSymbolDisplay(symbol),
                 ),
               ),
             ),
@@ -295,6 +289,106 @@ class _MathInputBarState extends State<MathInputBar> {
         },
       ),
     );
+  }
+
+  Widget _buildSymbolDisplay(Map<String, dynamic> symbol) {
+    switch (symbol['symbol']) {
+      case 'a/b':
+        // Visual stacked fraction
+        return const InlineFractionWidget(
+          numerator: 'a',
+          denominator: 'b',
+          size: 14,
+        );
+      case 'x²':
+        // Visual superscript
+        return RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF7553F6),
+            ),
+            children: [
+              const TextSpan(text: 'x'),
+              WidgetSpan(
+                child: Transform.translate(
+                  offset: const Offset(0, -4),
+                  child: const Text(
+                    '²',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      case 'xⁿ':
+        // Visual superscript with n
+        return RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF7553F6),
+            ),
+            children: [
+              const TextSpan(text: 'x'),
+              WidgetSpan(
+                child: Transform.translate(
+                  offset: const Offset(0, -4),
+                  child: const Text(
+                    'n',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      case 'eⁿ':
+        // Visual superscript with e
+        return RichText(
+          text: TextSpan(
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF7553F6),
+            ),
+            children: [
+              const TextSpan(text: 'e'),
+              WidgetSpan(
+                child: Transform.translate(
+                  offset: const Offset(0, -4),
+                  child: const Text(
+                    'n',
+                    style: TextStyle(
+                      fontSize: 10,
+                      color: Color(0xFF7553F6),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      default:
+        // Default text display
+        return Text(
+          symbol['symbol']!,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+            color: Color(0xFF7553F6),
+          ),
+        );
+    }
   }
 
   void _handleSmartSymbolInput(String symbol) {

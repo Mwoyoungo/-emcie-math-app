@@ -114,12 +114,14 @@ class AIResponse {
 class AIService {
   static const String _baseUrl = 'https://cloud.flowiseai.com/api/v1/prediction/e07906e0-cbb2-47a9-afc9-cebc4a830321';
   static const String _universityUrl = 'https://cloud.flowiseai.com/api/v1/prediction/e868e133-0871-477a-b056-eed91a4d4b05';
+  static const String _zimsecUrl = 'https://cloud.flowiseai.com/api/v1/prediction/2c66a040-1001-47b0-a099-d0e779935afd';
   
   static Future<AIResponse> getAssessmentResponse(
     String message, {
     String? chatId,
     List<ImageUpload>? images,
     bool isUniversityStudent = false,
+    bool isZimsecStudent = false,
   }) async {
     try {
       // Match the exact format from the JavaScript example
@@ -142,7 +144,14 @@ class AIService {
         }).toList();
       }
 
-      final apiUrl = isUniversityStudent ? _universityUrl : _baseUrl;
+      String apiUrl;
+      if (isUniversityStudent) {
+        apiUrl = _universityUrl;
+      } else if (isZimsecStudent) {
+        apiUrl = _zimsecUrl;
+      } else {
+        apiUrl = _baseUrl; // CAPS high school
+      }
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
@@ -184,7 +193,7 @@ class AIService {
       if (images != null && images.isNotEmpty) {
         errorMessage = "I'm having trouble analyzing the image right now. Please try again or send your question as text.";
       } else {
-        errorMessage = _getFallbackResponse(message);
+        errorMessage = _getFallbackResponse(message, isZimsecStudent: isZimsecStudent);
       }
       
       return AIResponse(
@@ -211,10 +220,23 @@ class AIService {
     return List.generate(length, (index) => chars[DateTime.now().millisecond % chars.length]).join();
   }
 
-  static String _getFallbackResponse(String message) {
+  static String _getFallbackResponse(String message, {bool isZimsecStudent = false}) {
     // Provide a fallback response if API fails
     if (message.toLowerCase().contains('assessment') || message.toLowerCase().contains('assess')) {
-      return '''Hello! I'm Maam Rose, your AI math tutor! 🌟 
+      if (isZimsecStudent) {
+        return '''Hello! I'm Math AI, your mathematics assistant! 🤖 
+
+I'm excited to help you with your ZIMSEC mathematics assessment. I'll be asking you questions tailored to your form level and the topic you've selected according to the ZIMSEC curriculum.
+
+Here's how our assessment will work:
+- I'll ask you questions one at a time
+- Take your time to think and provide your best answer
+- I'll give you feedback on each response
+- Don't worry about making mistakes - that's how we learn!
+
+Are you ready to begin? Let me start with your first question! 📚✨''';
+      } else {
+        return '''Hello! I'm Maam Rose, your AI math tutor! 🌟 
 
 I'm excited to help you with your mathematics assessment. I'll be asking you questions tailored to your grade level and the topic you've selected.
 
@@ -225,16 +247,23 @@ Here's how our assessment will work:
 - Don't worry about making mistakes - that's how we learn!
 
 Are you ready to begin? Let me start with your first question! 📚✨''';
+      }
     }
     
-    return "I'm here to help you with your math assessment! Let's get started with some questions.";
+    return isZimsecStudent 
+        ? "I'm Math AI, here to help you with your ZIMSEC mathematics! Let's get started with some questions."
+        : "I'm here to help you with your math assessment! Let's get started with some questions.";
   }
 
   static String createInitialAssessmentMessage({
     required String studentName,
     required String grade,
     required String subject,
+    bool isZimsecStudent = false,
   }) {
-    return '''Hi, I'm $studentName, a $grade student. I want to be assessed on $subject. Please start my personalized math assessment with questions appropriate for my grade level. Focus on testing my understanding of key $subject concepts and provide detailed feedback on my responses.''';
+    final gradeText = isZimsecStudent ? 'Form $grade' : 'Grade $grade';
+    final curriculumText = isZimsecStudent ? 'according to the ZIMSEC curriculum' : '';
+    
+    return '''Hi, I'm $studentName, a $gradeText student. I want to be assessed on $subject. Please start my personalized mathematics assessment with questions appropriate for $gradeText level, focusing on testing my understanding of key $subject concepts $curriculumText. Provide detailed feedback on my responses.''';
   }
 }

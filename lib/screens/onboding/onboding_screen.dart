@@ -263,7 +263,7 @@ class _OnbodingScreenState extends State<OnbodingScreen> {
         ),
         const SizedBox(height: 24),
         const Text(
-          "Welcome to Emcie",
+          "Welcome to SRT-Guru",
           style: TextStyle(
             fontSize: 32,
             fontWeight: FontWeight.bold,
@@ -272,7 +272,7 @@ class _OnbodingScreenState extends State<OnbodingScreen> {
         ),
         const SizedBox(height: 8),
         Text(
-          "E=mc² Energy for Math Learning",
+          "Smart Responsive Teaching Guru",
           style: TextStyle(
             fontSize: 16,
             color: Colors.grey[600],
@@ -304,7 +304,7 @@ class _OnbodingScreenState extends State<OnbodingScreen> {
         ),
         const SizedBox(height: 32),
         const Text(
-          "Emcie",
+          "SRT-Guru",
           style: TextStyle(
             fontSize: 48,
             fontWeight: FontWeight.bold,
@@ -313,7 +313,7 @@ class _OnbodingScreenState extends State<OnbodingScreen> {
         ),
         const SizedBox(height: 12),
         const Text(
-          "E=mc² Energy for Math",
+          "Smart Responsive Teaching Guru",
           style: TextStyle(
             fontSize: 18,
             color: Colors.white,
